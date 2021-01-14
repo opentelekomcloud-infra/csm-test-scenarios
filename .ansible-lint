@@ -1,0 +1,12 @@
+parseable: true
+quiet: true
+
+exclude_paths:
+  - ./.tox/
+  - ./roles/
+  - ./playbooks/roles/
+  - ./playbooks/templates
+
+skip_list:
+  - '106'
+  - '208'

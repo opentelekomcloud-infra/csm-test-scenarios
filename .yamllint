@@ -1,0 +1,23 @@
+---
+extends: default
+
+rules:
+  document-start: disable
+  trailing-spaces: enable
+  new-lines:
+    type: unix
+  truthy:
+    allowed-values:
+      - 'true'
+      - 'false'
+      - 'yes'
+      - 'no'
+  line-length:
+    max: 100
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+
+ignore: |
+  .tox/
+  */templates/
+  roles/

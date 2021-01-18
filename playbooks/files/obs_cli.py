@@ -19,10 +19,10 @@ RW_OWNER = 0o600
 
 def parse_params():
     parser = ArgumentParser(description='Synchronize used private key with OBS')
-    parser.add_argument('--key', '-k', required=True)
-    parser.add_argument('--output', '-o', required=True)
-    parser.add_argument('--local', action='store_true', default=False)
-    parser.add_argument('--scenario_name')
+    parser.add_argument('--key_name', '-k', required=True, default='key_csm_controller')
+    parser.add_argument('--scenario_name', '-s', nargs='+', required=True, default=['csm_controller'])
+    parser.add_argument('--terraform_workspace', '-w', required=True, default='test')
+    parser.add_argument('--output', '-o', required=True, default='/tmp/data')
     args = parser.parse_args()
     return args
 
@@ -45,7 +45,7 @@ def requires_update(file_name, remote_md5):
     return remote_md5 != md5
 
 
-def get_key_from_s3(key_file, key_name, credential: Credential) -> str:
+def get_item_from_s3(key_file, key_name, credential: Credential) -> str:
     """Download existing key from s3 or create a new one and upload"""
 
     session = Session(aws_access_key_id=credential.access,
@@ -121,7 +121,7 @@ def generate_inventory(args):
     }
     hosts = inv_output['all']['hosts']
     children = inv_output['all']['children']
-    for name, attributes in get_ecs_instances(args.state):
+    for name, attributes in get_instances_info(args.state):
         tags: dict = attributes.pop('tag', None) or {}
         hosts[name] = attributes
         if 'group' in tags:
@@ -164,12 +164,12 @@ def get_instances_info(tf_state_file):
 def main():
     """Run the script"""
     args = parse_params()
-
-    key_file = args.output
+    key_file = f'{args.output}/{args.key_name}'
     credential = acquire_temporary_ak_sk()
-    key_file = get_key_from_s3(key_file, args.key, credential)
-    generate_inventory(args)
+    key_file = get_item_from_s3(key_file, args.key_name, credential)
     os.chmod(key_file, RW_OWNER)
+
+    # generate_inventory(args)
 
 
 if __name__ == '__main__':

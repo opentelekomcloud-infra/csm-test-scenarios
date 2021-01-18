@@ -20,7 +20,8 @@ RW_OWNER = 0o600
 def parse_params():
     parser = ArgumentParser(description='Synchronize used private key with OBS')
     parser.add_argument('--key_name', '-k', required=True, default='key_csm_controller')
-    parser.add_argument('--scenario_name', '-s', nargs='+', required=True, default=['csm_controller'])
+    parser.add_argument('--scenario_name', '-s', nargs='+', required=True,
+                        default=['csm_controller'])
     parser.add_argument('--terraform_workspace', '-w', required=True, default='test')
     parser.add_argument('--output', '-o', required=True, default='/tmp/data')
     args = parser.parse_args()
@@ -112,11 +113,12 @@ def read_state(state_file) -> dict:
         return json.load(s_file)
 
 
-def generate_vars_file(state):
+def generate_vars_file(state, key_path):
     inv_output = {
         'controller_state': {}
     }
     variables = inv_output['controller_state']
+    variables.update({'controller_key': key_path})
     for outputs in get_instances_info(state):
         variables.update(outputs)
     if variables:
@@ -136,7 +138,10 @@ def get_instances_info(tf_state_file):
 
 
 def main():
-    """Run the script"""
+    """
+    Script to prepare key and state variables
+    Creates var file for ansible in playbooks/vars folder
+    """
     args = parse_params()
     if not os.path.exists(args.output):
         os.makedirs(args.output)
@@ -149,11 +154,15 @@ def main():
     os.chmod(key_file, RW_OWNER)
 
     for state in args.scenario_name:
+        path = f'{args.output}/{state}'
         get_item_from_s3(
-            f'{args.output}/{state}',
+            path,
             f'env:/{args.terraform_workspace}/terraform_state/{state}',
             credential)
-        generate_vars_file(f'{args.output}/{state}')
+        generate_vars_file(
+            path,
+            key_file
+        )
 
 
 if __name__ == '__main__':

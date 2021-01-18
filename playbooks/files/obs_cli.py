@@ -45,7 +45,7 @@ def requires_update(file_name, remote_md5):
     return remote_md5 != md5
 
 
-def get_item_from_s3(key_file, key_name, credential: Credential) -> str:
+def get_item_from_s3(file, item_name, credential: Credential) -> str:
     """Download existing key from s3 or create a new one and upload"""
 
     session = Session(aws_access_key_id=credential.access,
@@ -55,16 +55,16 @@ def get_item_from_s3(key_file, key_name, credential: Credential) -> str:
     obs = session.resource('s3', endpoint_url=S3_ENDPOINT)
     bucket = obs.Bucket(BUCKET)
     try:
-        file_md5 = bucket.Object(key_name).e_tag[1:-1]
+        file_md5 = bucket.Object(item_name).e_tag[1:-1]
     except ClientError as cl_e:
         if cl_e.response['Error']['Code'] == '404':
             print('The object does not exist in s3. Generating new one...')
         raise cl_e
 
-    if requires_update(key_file, file_md5):
-        bucket.download_file(key_name, key_file)
+    if requires_update(file, file_md5):
+        bucket.download_file(item_name, file)
         print('Private key downloaded')
-    return key_file
+    return file
 
 
 def _session_token_request():
@@ -112,26 +112,16 @@ def read_state(state_file) -> dict:
         return json.load(s_file)
 
 
-def generate_inventory(args):
+def generate_vars_file(state):
     inv_output = {
-        'all': {
-            'hosts': {},
-            'children': {}
-        }
+        'controller_state': {}
     }
-    hosts = inv_output['all']['hosts']
-    children = inv_output['all']['children']
-    for name, attributes in get_instances_info(args.state):
-        tags: dict = attributes.pop('tag', None) or {}
-        hosts[name] = attributes
-        if 'group' in tags:
-            grp_name = tags['group']
-            if grp_name not in children:
-                children[grp_name] = {'hosts': {}}
-            children[grp_name]['hosts'][name] = ''
-    if hosts:
+    variables = inv_output['controller_state']
+    for outputs in get_instances_info(state):
+        variables.update(outputs)
+    if variables:
         root_path = os.path.abspath(f'{os.path.dirname(__file__)}/../..')
-        path = f'{root_path}/inventory/prod/{args.name}.yml'
+        path = f'{root_path}/playbooks/vars/{os.path.basename(state)}.yml'
         with open(path, 'w+') as file:
             file.write(yaml.safe_dump(inv_output, default_flow_style=False))
         print(f'File written to: {path}')
@@ -141,35 +131,29 @@ def generate_inventory(args):
 
 def get_instances_info(tf_state_file):
     tf_state = read_state(tf_state_file)
-    for resource in tf_state['resources']:
-
-        if resource['type'] == 'opentelekomcloud_compute_instance_v2':
-            for instance in resource['instances']:
-                tf_attrib = instance['attributes']
-
-                name = tf_attrib['name']
-                attributes = {
-                    'id': tf_attrib['id'],
-                    'image': tf_attrib['image_name'],
-                    'region': tf_attrib['region'],
-                    'public_ipv4': tf_attrib['network'][0]['floating_ip'],
-                    'ansible_host': tf_attrib['access_ip_v4'],
-                    'ansible_ssh_user': 'linux',
-                    'tag': tf_attrib['tag'],
-                }
-
-                yield name, attributes
+    for name in tf_state['outputs']:
+        yield {name: tf_state['outputs'][name]['value']}
 
 
 def main():
     """Run the script"""
     args = parse_params()
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
     key_file = f'{args.output}/{args.key_name}'
     credential = acquire_temporary_ak_sk()
-    key_file = get_item_from_s3(key_file, args.key_name, credential)
+    key_file = get_item_from_s3(
+        key_file,
+        f'key/{args.key_name}',
+        credential)
     os.chmod(key_file, RW_OWNER)
 
-    # generate_inventory(args)
+    for state in args.scenario_name:
+        get_item_from_s3(
+            f'{args.output}/{state}',
+            f'env:/{args.terraform_workspace}/terraform_state/{state}',
+            credential)
+        generate_vars_file(f'{args.output}/{state}')
 
 
 if __name__ == '__main__':

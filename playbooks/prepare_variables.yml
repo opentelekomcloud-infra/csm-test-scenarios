@@ -1,0 +1,11 @@
+---
+- name: Prepare key and variables for scenario
+  hosts: localhost
+  tasks:
+    - name: Get key and vars from OBS
+      script: >
+        obs_cli.py
+        --output {{ key_path }}
+        --key {{ key_name }}
+        --terraform_workspace {{ terraform_workspace }}
+        --scenario_name {{ scenario_name }}

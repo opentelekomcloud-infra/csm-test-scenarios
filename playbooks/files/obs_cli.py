@@ -15,7 +15,7 @@ from openstack.config import OpenStackConfig
 S3_ENDPOINT = 'https://obs.eu-de.otc.t-systems.com'
 BUCKET = 'obs-csm'
 RW_OWNER = 0o600
-
+ROOT_PATH = os.path.abspath(f'{os.path.dirname(__file__)}/../..')
 
 def parse_params():
     parser = ArgumentParser(description='Synchronize used private key with OBS')
@@ -47,7 +47,7 @@ def requires_update(file_name, remote_md5):
 
 
 def get_item_from_s3(file, item_name, credential: Credential) -> str:
-    """Download existing key from s3 or create a new one and upload"""
+    """Download existing item from s3"""
 
     session = Session(aws_access_key_id=credential.access,
                       aws_secret_access_key=credential.secret,
@@ -59,7 +59,7 @@ def get_item_from_s3(file, item_name, credential: Credential) -> str:
         file_md5 = bucket.Object(item_name).e_tag[1:-1]
     except ClientError as cl_e:
         if cl_e.response['Error']['Code'] == '404':
-            print('The object does not exist in s3. Generating new one...')
+            print('The object does not exist in s3.')
         raise cl_e
 
     if requires_update(file, file_md5):
@@ -115,15 +115,15 @@ def read_state(state_file) -> dict:
 
 def generate_vars_file(state, key_path):
     inv_output = {
-        'controller_state': {}
+        'controller_state': {
+            'controller_key': key_path
+        }
     }
     variables = inv_output['controller_state']
-    variables.update({'controller_key': key_path})
     for outputs in get_instances_info(state):
         variables.update(outputs)
     if variables:
-        root_path = os.path.abspath(f'{os.path.dirname(__file__)}/../..')
-        path = f'{root_path}/playbooks/vars/{os.path.basename(state)}.yml'
+        path = f'{ROOT_PATH}/playbooks/vars/{os.path.basename(state)}.yml'
         with open(path, 'w+') as file:
             file.write(yaml.safe_dump(inv_output, default_flow_style=False))
         print(f'File written to: {path}')

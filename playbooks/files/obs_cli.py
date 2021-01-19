@@ -17,6 +17,7 @@ BUCKET = 'obs-csm'
 RW_OWNER = 0o600
 ROOT_PATH = os.path.abspath(f'{os.path.dirname(__file__)}/../..')
 
+
 def parse_params():
     parser = ArgumentParser(description='Synchronize used private key with OBS')
     parser.add_argument('--key_name', '-k', required=True, default='key_csm_controller')
@@ -120,21 +121,16 @@ def generate_vars_file(state, key_path):
         }
     }
     variables = inv_output['controller_state']
-    for outputs in get_instances_info(state):
-        variables.update(outputs)
-    if variables:
-        path = f'{ROOT_PATH}/playbooks/vars/{os.path.basename(state)}.yml'
-        with open(path, 'w+') as file:
-            file.write(yaml.safe_dump(inv_output, default_flow_style=False))
-        print(f'File written to: {path}')
-    else:
-        print('Nothing to write')
+    variables.update(get_instances_info(state))
+    path = f'{ROOT_PATH}/playbooks/vars/{os.path.basename(state)}.yml'
+    with open(path, 'w+') as file:
+        file.write(yaml.safe_dump(inv_output, default_flow_style=False))
+    print(f'File written to: {path}')
 
 
 def get_instances_info(tf_state_file):
     tf_state = read_state(tf_state_file)
-    for name in tf_state['outputs']:
-        yield {name: tf_state['outputs'][name]['value']}
+    return {name: tf_state['outputs'][name]['value'] for name in tf_state['outputs']}
 
 
 def main():

@@ -1,0 +1,4 @@
+key_name: key_csm_controller
+terraform_workspace: temp
+scenario_name: csm_controller
+key_path: /tmp/data

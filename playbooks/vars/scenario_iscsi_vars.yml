@@ -1,0 +1,9 @@
+volume_group: otc_iscsi
+volume_name: otc_lun1
+initiator_address: "{{ hostvars.iscsi_initiator.ansible_host }}"
+incominguser_username: otc-iscsi-user
+default_incominguser_password: password
+incominguser_password: |
+  {{ lookup('env', 'INITIATOR_PASSWORD') | default(default_incominguser_password, true) }}
+mount_point: "/mnt/scsi"
+device: "/dev/sda"

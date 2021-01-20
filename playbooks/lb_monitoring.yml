@@ -15,7 +15,7 @@
     - name: Register nodes
       add_host:
         name: "{{ lb_monitoring.lb_ctrl_ip }}"
-        groups: lb
+        groups: lb_host
         ansible_ssh_user: linux
         ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
         ansible_ssh_common_args: >
@@ -61,7 +61,7 @@
     server_port: 80
 
 - name: Install telegraf client on Bastion
-  hosts: lb
+  hosts: lb_host
   become: yes
   vars_files:
     - "./vars/telegraf_dbconnection_vars.yml"
@@ -108,7 +108,7 @@
             - "ens3"
 
 - name: Prepare csm runner
-  hosts: lb
+  hosts: lb_host
   become: yes
   tasks:
     - name: Install csm-test-utils
@@ -117,7 +117,7 @@
         name: csm-test-utils
 
 - name: Checking reporting processes
-  hosts: lb
+  hosts: lb_host
   become: yes
   tasks:
     - name: Get reporting processes list from remote host  # noqa 301 305
@@ -134,7 +134,7 @@
       ignore_errors: yes
 
 - name: Start reporting for scenario
-  hosts: lb
+  hosts: lb_host
   become: yes
   vars:
     elb_ip: "{{ lb_monitoring.lb_fip }}"

@@ -5,9 +5,6 @@
     requirements:
       - "requirements"
     req_dir: "/tmp/requirements/"
-  roles:
-    - role: anton_sidelnikov.terraform
-      become: yes
   tasks:
     - name: Update and upgrade apt packages
       become: yes

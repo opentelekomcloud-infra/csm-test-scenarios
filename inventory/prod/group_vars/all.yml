@@ -1,6 +1,4 @@
 key_name: key_csm_controller
 terraform_workspace: temp
 scenario_name: csm_controller
-key_path: "~/.ssh/{{ key_name }}"
-terraform_version: 0.14.0
-terraform_network_cidr: "192.168.0.0/16"
+key_path: /tmp/data

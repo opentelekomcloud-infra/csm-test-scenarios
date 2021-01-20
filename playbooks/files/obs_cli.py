@@ -121,7 +121,7 @@ def generate_vars_file(state, key_path):
             'controller_key': key_path
         }
     }
-    variables = inv_output[f'{state_name}']
+    variables = inv_output[state_name]
     variables.update(get_instances_info(state))
     path = f'{ROOT_PATH}/playbooks/vars/{state_name}.yml'
     with open(path, 'w+') as file:

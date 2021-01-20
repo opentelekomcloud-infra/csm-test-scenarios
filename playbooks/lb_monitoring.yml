@@ -62,8 +62,8 @@
   hosts: lb_host
   become: yes
   vars_files:
-  - "./vars/csm_controller.yml"
-  - "./vars/lb_monitoring.yml"
+    - "./vars/csm_controller.yml"
+    - "./vars/lb_monitoring.yml"
   vars:
     elb_ip: "{{ lb_monitoring.lb_fip }}"
     tlg: "http://{{ csm_controller.csm_controller_fip }}/lb"

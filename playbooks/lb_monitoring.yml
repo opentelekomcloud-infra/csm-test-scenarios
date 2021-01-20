@@ -1,3 +1,145 @@
 ---
 - name: Prepare controller variables
   import_playbook: prepare_variables.yml
+  vars:
+    scenario_name:
+      - csm_controller
+      - lb_monitoring
+
+- name: Prepare variables
+  hosts: localhost
+  vars_files:
+    - "./vars/csm_controller.yml"
+    - "./vars/lb_monitoring.yml"
+  tasks:
+    - name: Register nodes
+      add_host:
+        name: "{{ lb_monitoring.lb_ctrl_ip }}"
+        groups: lb
+        ansible_ssh_user: linux
+        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
+        ansible_ssh_common_args: >
+          -o UserKnownHostsFile=/dev/null
+          -o ProxyCommand='ssh -W %h:%p
+          -q linux@{{ csm_controller.csm_controller_fip }}
+          -i {{ csm_controller.controller_key }}
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null'
+          -o PasswordAuthentication=no
+
+    - name: Register nodes
+      add_host:
+        name: "{{ item }}"
+        groups: gatewayed
+        ansible_ssh_user: linux
+        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
+        ansible_ssh_common_args: >
+          -o UserKnownHostsFile=/dev/null
+          -o ProxyCommand='ssh -W %h:%p
+          -q linux@{{ csm_controller.csm_controller_fip }}
+          -i {{ csm_controller.controller_key }}
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null'
+          -o PasswordAuthentication=no
+      loop: "{{ lb_monitoring.lb_ecs_local_ips }}"
+
+- name: Wait for hosts
+  hosts: gatewayed
+  gather_facts: no
+  tasks:
+    - name: Wait for host to be up
+      wait_for_connection:
+        timeout: 120
+
+- name: Start Server
+  hosts: gatewayed
+  become: yes
+  roles:
+    - too_simple_server
+  vars:
+    debug: true
+    server_port: 80
+
+- name: Install telegraf client on Bastion
+  hosts: lb
+  become: yes
+  vars_files:
+    - "./vars/telegraf_dbconnection_vars.yml"
+    - "./vars/nginx_telegraf_local.yml"
+  roles:
+    - role: telegraf_client
+      vars:
+        telegraf_influxdb_retention_policy: ""
+        telegraf_plugins_base:
+          - name: http_listener_v2
+            options:
+              service_address: "localhost:{{ telegraf_local_port }}"
+              data_format: "influx"
+    - role: geerlingguy.nginx
+      vars:
+        nginx_remove_default_vhost: yes
+        nginx_vhosts:
+          - listen: "80"
+            server_name: "localhost"
+            extra_parameters: "{{ extra_parameters }}"
+
+- name: Install telegraf client on nodes
+  hosts: gatewayed
+  become: yes
+  vars_files:
+    - "./vars/telegraf_dbconnection_vars.yml"
+  roles:
+    - telegraf_client
+  vars:
+    telegraf_influxdb_retention_policy: ""
+    telegraf_plugins_base:
+      - name: cpu
+        options:
+          percpu: "false"
+          totalcpu: "true"
+          fielddrop:
+            - "time_*"
+      - name: net
+        options:
+          interfaces:
+            - "eth*"
+            - "enp0s[0-1]"
+            - "lo"
+            - "ens3"
+
+- name: Prepare csm runner
+  hosts: lb
+  become: yes
+  tasks:
+    - name: Install csm-test-utils
+      pip:
+        executable: pip3
+        name: csm-test-utils
+
+- name: Checking reporting processes
+  hosts: lb
+  become: yes
+  tasks:
+    - name: Get reporting processes list from remote host  # noqa 301 305
+      ignore_errors: yes
+      shell: "ps aux | grep 'csm_test_utils monitor' | awk '{print $2}'"
+      register: process_monitor
+    - name: Kill running reporting processes  # noqa 301 305
+      ignore_errors: yes
+      shell: "kill {{ process_monitor.stdout_lines[0] }}"
+    - name: Waiting for status
+      wait_for:
+        path: "/proc/{{ process_monitor.stdout_lines[0] }}/status"
+        state: absent
+      ignore_errors: yes
+
+- name: Start reporting for scenario
+  hosts: lb
+  become: yes
+  vars:
+    elb_ip: "{{ lb_monitoring.lb_fip }}"
+    tlg: "http://{{ csm_controller.csm_controller_fip }}/lb"
+    nohup: "nohup /usr/bin/python3 -m csm_test_utils monitor"
+  tasks:
+    - name: Execute csm_test_utils  # noqa 301 305
+      shell: "{{ nohup }} --target {{ elb_ip }} --telegraf {{ tlg }} &"

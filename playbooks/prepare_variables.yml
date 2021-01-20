@@ -1,4 +1,40 @@
 ---
+- name: Setup software
+  hosts: localhost
+  vars:
+    requirements:
+      - "requirements"
+    req_dir: "/tmp/requirements/"
+  roles:
+    - role: anton_sidelnikov.terraform
+      become: yes
+  tasks:
+    - name: Update and upgrade apt packages
+      become: yes
+      apt:
+        upgrade: yes
+        update_cache: yes
+    - name: Install PIP
+      become: yes
+      apt:
+        name:
+          - python3-setuptools
+          - python3-pip
+          - python3-venv
+          - python3-wheel
+          - python3-dev
+          - cron
+    - name: Copy Requirements
+      copy:
+        src: "{{ item }}.txt"
+        dest: "{{ req_dir }}"
+      with_items: "{{ requirements }}"
+    - name: Install requirements
+      pip:
+        executable: pip3
+        requirements: "{{ req_dir }}{{ item }}.txt"
+      with_items: "{{ requirements }}"
+
 - name: Prepare key and variables for scenario
   hosts: localhost
   tasks:

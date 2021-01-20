@@ -115,14 +115,15 @@ def read_state(state_file) -> dict:
 
 
 def generate_vars_file(state, key_path):
+    state_name = os.path.basename(state)
     inv_output = {
-        'controller_state': {
+        state_name: {
             'controller_key': key_path
         }
     }
-    variables = inv_output['controller_state']
+    variables = inv_output[f'{state_name}']
     variables.update(get_instances_info(state))
-    path = f'{ROOT_PATH}/playbooks/vars/{os.path.basename(state)}.yml'
+    path = f'{ROOT_PATH}/playbooks/vars/{state_name}.yml'
     with open(path, 'w+') as file:
         file.write(yaml.safe_dump(inv_output, default_flow_style=False))
     print(f'File written to: {path}')

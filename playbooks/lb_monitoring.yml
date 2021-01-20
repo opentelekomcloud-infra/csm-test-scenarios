@@ -2,9 +2,7 @@
 - name: Prepare controller variables
   import_playbook: prepare_variables.yml
   vars:
-    scenario_name:
-      - csm_controller
-      - lb_monitoring
+    scenario_name: 'csm_controller lb_monitoring'
 
 - name: Prepare variables
   hosts: localhost
@@ -31,6 +29,13 @@
   hosts: lb_host
   become: yes
   tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - python3-pip
+          - python3-setuptools
+          - python3-wheel
+
     - name: Install csm-test-utils
       pip:
         executable: pip3
@@ -56,6 +61,9 @@
 - name: Start reporting for scenario
   hosts: lb_host
   become: yes
+  vars_files:
+  - "./vars/csm_controller.yml"
+  - "./vars/lb_monitoring.yml"
   vars:
     elb_ip: "{{ lb_monitoring.lb_fip }}"
     tlg: "http://{{ csm_controller.csm_controller_fip }}/lb"

@@ -80,7 +80,7 @@
     - name: Schedule load script status check
       cron:
         name: Check status of CPU load script
-        minute: */59
+        minute: "*/59"
         job: /tmp/check_cpu_load_status.sh
 
     - name: Start monitoring server and loadbalancer  # noqa 301 305

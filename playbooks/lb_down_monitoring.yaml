@@ -32,10 +32,10 @@
     - name: Changing perm of "lb_down_test.sh", adding "+x"
       file:
         dest: /home/linux/test/lb_down_test.sh
-        mode: a+x
+        mode: "a+x"
 
     - name: Schedule test
       cron:
         name: Run lb_down monitoring
-        minute: */5
+        minute: "*/5"
         job: /home/linux/test/lb_down_test.sh

@@ -38,7 +38,7 @@
     - name: Cron job for create big files on all devices every 15 minutes
       cron:
         name: "Creating big file on {{ item.value }}"
-        minute: */5
+        minute: "*/5"
         job: >
           /bin/dd if=/dev/urandom of="/mnt/{{ item.key }}/bigfile.txt"
           bs=1000000 count=1000 oflag=dsync
@@ -47,6 +47,6 @@
     - name: Cron job for reading big files on all devices every 5 minutes
       cron:
         name: "Reading big files from {{ item.value }}"
-        minute: */2
+        minute: "*/2"
         job: /sbin/hdparm -tT "{{ item.value }}"
       with_items: "{{ lookup('dict', devices) }}"

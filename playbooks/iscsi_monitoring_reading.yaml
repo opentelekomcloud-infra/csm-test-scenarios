@@ -32,22 +32,5 @@
     device: /dev/sda
     mount_point: /mnt/scsi
   tasks:
-    - name: Cron job for create big files on SCSI device every 5 minutes
-      cron:
-        name: Creating big file on iSCSI device
-        minute: "*/5"
-        job: >
-          /bin/dd if=/dev/urandom of="{{ mount_point }}/bigfile.txt"
-          bs=5000000 count=100 oflag=dsync
-
-    - name: Cron job for reading big files on all devices every 2 minutes
-      cron:
-        name: Reading big files from iSCSI device
-        minute: "*/2"
-        job: /sbin/hdparm -tT "{{ device }}"
-
-    - name: Schedule connection test
-      cron:
-        name: Check status of iSCSI connection
-        minute: "*/1"
-        job: /tmp/iscsi_connection_status.sh
+    - name: Random readings on device every 2 minutes
+      shell: /sbin/hdparm -tT "{{ device }}"

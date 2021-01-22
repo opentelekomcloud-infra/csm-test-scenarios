@@ -35,18 +35,8 @@
       sas: /dev/vdc
       ssd: /dev/vdd
   tasks:
-    - name: Cron job for create big files on all devices every 15 minutes
-      cron:
-        name: "Creating big file on {{ item.value }}"
-        minute: "*/5"
-        job: >
-          /bin/dd if=/dev/urandom of="/mnt/{{ item.key }}/bigfile.txt"
-          bs=1000000 count=1000 oflag=dsync
-      with_items: "{{ lookup('dict', devices) }}"
-
-    - name: Cron job for reading big files on all devices every 5 minutes
-      cron:
-        name: "Reading big files from {{ item.value }}"
-        minute: "*/2"
-        job: /sbin/hdparm -tT "{{ item.value }}"
+    - name: Create big files on all devices every 5 minutes
+      shell: >
+        /bin/dd if=/dev/urandom of="/mnt/{{ item.key }}/bigfile.txt"
+        bs=1000000 count=1000 oflag=dsync
       with_items: "{{ lookup('dict', devices) }}"

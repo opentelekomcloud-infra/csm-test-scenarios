@@ -2,7 +2,9 @@
 - name: Prepare controller variables
   import_playbook: prepare_variables.yaml
   vars:
-    scenario_name: csm_controller rds_backup_monitoring
+    scenario_name: >
+      csm_controller
+      rds_backup_monitoring
 
 - name: Prepare variables
   hosts: localhost
@@ -31,8 +33,6 @@
   vars_files:
     - ./vars/rds_backup_monitoring.yaml
   vars:
-    cloud_name: "{{ lookup('env', 'OS_CLOUD') }}"
-    cloud_config: /etc/openstack
     endpoint: https://rds.eu-de.otc.t-systems.com
     ecs_instance_ip: "{{ rds_backup_monitoring.ecs_ip }}"
   tasks:

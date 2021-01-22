@@ -2,7 +2,9 @@
 - name: Prepare controller variables
   import_playbook: prepare_variables.yaml
   vars:
-    scenario_name: csm_controller lb_down_monitoring
+    scenario_name: >
+      csm_controller
+      lb_down_monitoring
 
 - name: Prepare variables
   hosts: localhost
@@ -28,14 +30,11 @@
 - name: Start test
   hosts: lb_down_host
   become: yes
+  vars:
+    script_path: /home/linux/test/lb_down_test.sh
   tasks:
-    - name: Changing perm of "lb_down_test.sh", adding "+x"
-      file:
-        dest: /home/linux/test/lb_down_test.sh
-        mode: "a+x"
-
     - name: Schedule test
       cron:
         name: Run lb_down monitoring
         minute: "*/5"
-        job: /home/linux/test/lb_down_test.sh
+        job: {{ script_path }}

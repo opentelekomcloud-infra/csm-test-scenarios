@@ -2,7 +2,9 @@
 - name: Prepare controller variables
   import_playbook: prepare_variables.yaml
   vars:
-    scenario_name: csm_controller iscsi_monitoring
+    scenario_name: >
+      csm_controller
+      iscsi_monitoring
 
 - name: Prepare variables
   hosts: localhost

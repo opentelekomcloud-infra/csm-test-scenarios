@@ -1,0 +1,53 @@
+---
+- name: Prepare controller variables
+  import_playbook: prepare_variables.yaml
+  vars:
+    scenario_name: csm_controller iscsi_monitoring
+
+- name: Prepare variables
+  hosts: localhost
+  vars_files:
+    - ./vars/csm_controller.yaml
+    - ./vars/iscsi_monitoring.yaml
+  tasks:
+    - name: Register iscsi_initiator
+      add_host:
+        name: iscsi_initiator
+        ansible_host: "{{ iscsi_monitoring.iscsi_initiator_instance_ip }}"
+        ansible_ssh_user: linux
+        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
+        ansible_ssh_common_args: >
+            -o UserKnownHostsFile=/dev/null
+            -o ProxyCommand='ssh -W %h:%p
+            -q linux@{{ csm_controller.csm_controller_fip }}
+            -i {{ csm_controller.controller_key }}
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null'
+            -o PasswordAuthentication=no
+
+- name: Start test
+  hosts: iscsi_initiator
+  become: yes
+  vars:
+    device: /dev/sda
+    mount_point: /mnt/scsi
+  tasks:
+    - name: Cron job for create big files on SCSI device every 5 minutes
+      cron:
+        name: Creating big file on iSCSI device
+        minute: */5
+        job: >
+          /bin/dd if=/dev/urandom of="{{ mount_point }}/bigfile.txt"
+          bs=5000000 count=100 oflag=dsync
+
+    - name: Cron job for reading big files on all devices every 2 minutes
+      cron:
+        name: Reading big files from iSCSI device
+        minute: */2
+        job: /sbin/hdparm -tT "{{ device }}"
+
+    - name: Schedule connection test
+      cron:
+        name: Check status of iSCSI connection
+        minute: */1
+        job: /tmp/iscsi_connection_status.sh

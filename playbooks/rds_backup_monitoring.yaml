@@ -1,0 +1,66 @@
+---
+- name: Prepare controller variables
+  import_playbook: prepare_variables.yaml
+  vars:
+    scenario_name: csm_controller rds_backup_monitoring
+
+- name: Prepare variables
+  hosts: localhost
+  vars_files:
+    - ./vars/csm_controller.yaml
+    - ./vars/rds_backup_monitoring.yaml
+  tasks:
+    - name: Register rds_backup_host
+      add_host:
+        name: rds_backup_host
+        ansible_host: "{{ rds_backup_monitoring.ecs_ip }}"
+        ansible_ssh_user: "linux"
+        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
+        ansible_ssh_common_args: >
+          -o UserKnownHostsFile=/dev/null
+          -o ProxyCommand='ssh -W %h:%p
+          -q linux@{{ csm_controller.csm_controller_fip }}
+          -i {{ csm_controller.controller_key }}
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null'
+          -o PasswordAuthentication=no
+
+- name: Start test
+  hosts: rds_backup_host
+  become: yes
+  vars_files:
+    - ./vars/rds_backup_monitoring.yaml
+  vars:
+    cloud_name: "{{ lookup('env', 'OS_CLOUD') }}"
+    cloud_config: /etc/openstack
+    endpoint: https://rds.eu-de.otc.t-systems.com
+    ecs_instance_ip: "{{ rds_backup_monitoring.ecs_ip }}"
+  tasks:
+    - name: Get running reporting processes list from remote host  # noqa 301 305
+      ignore_errors: yes
+      shell: "ps aux | grep 'csm_test_utils rds_backup_monitor' | awk '{print $2}'"
+      register: process_monitor
+
+    - name: Kill running reporting processes  # noqa 301 305
+      ignore_errors: yes
+      shell: "kill {{ process_monitor.stdout_lines[0] }}"
+
+    - name: Waiting for status
+      wait_for:
+        path: "/proc/{{ process_monitor.stdout_lines[0] }}/status"
+        state: absent
+      ignore_errors: yes
+
+    - name: Copy clouds.yaml to ecs
+      copy:
+        src: /etc/openstack/clouds.yaml
+        dest: "{{ cloud_config }}/"
+
+    - name: Start monitoring RDS backups  # noqa 301 305
+      shell: "nohup python3 -m csm_test_utils rds_backup_monitor
+               --instance_id {{ rds_backup_monitoring.rds_id }}
+               --cloud_config {{ cloud_config }}
+               --cloud_name {{ cloud_name }}
+               --endpoint {{ endpoint }}
+               --target {{ rds_backup_monitoring.ecs_ip }}
+               --telegraf 'http://{{ rds_backup_monitoring.ecs_ip }}' &"

@@ -36,5 +36,5 @@
   tasks:
     - name: Create big file on SCSI device every 5 minutes
       shell: >
-          /bin/dd if=/dev/urandom of="{{ mount_point }}/bigfile.txt"
+          /bin/dd if=/dev/urandom of="{{ mount_point }}/bigfile"
           bs=5000000 count=100 oflag=dsync

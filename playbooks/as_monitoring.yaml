@@ -27,21 +27,6 @@
           -o UserKnownHostsFile=/dev/null'
           -o PasswordAuthentication=no
 
-    - name: Register as_control_host
-      add_host:
-        name: as_control_host
-        ansible_host: "{{ as_monitoring.as_control_instance_ip }}"
-        ansible_ssh_user: linux
-        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
-        ansible_ssh_common_args: >
-          -o UserKnownHostsFile=/dev/null
-          -o ProxyCommand='ssh -W %h:%p
-          -q linux@{{ csm_controller.csm_controller_fip }}
-          -i {{ csm_controller.controller_key }}
-          -o StrictHostKeyChecking=no
-          -o UserKnownHostsFile=/dev/null'
-          -o PasswordAuthentication=no
-
 - name: Start test
   hosts: as_host
   become: yes
@@ -51,7 +36,6 @@
     lb: "{{ as_monitoring.lb_instance_ip }}"
     nohup: nohup /usr/bin/python3 -m csm_test_utils
     tlg: http://localhost:8080
-    script_path: /tmp/check_cpu_load_status.sh
   tasks:
     - name: Get reporting processes list from remote host  # noqa 301 305
       ignore_errors: yes
@@ -76,15 +60,6 @@
       shell: >
         start-stop-daemon -Sbmvp /tmp/cpu_load.pid -x /usr/bin/python3
         /tmp/cpu_load.py -- --source /tmp/load_levels.dat --interval 60 --ncpus 2
-
-    - name: Changing perm of "check_cpu_load_status.sh", adding "+x"
-      file: dest=/tmp/check_cpu_load_status.sh mode=a+x
-
-    - name: Schedule load script status check
-      cron:
-        name: Check status of CPU load script
-        minute: "*/59"
-        job: {{ script_path }}
 
     - name: Start monitoring server and loadbalancer  # noqa 301 305
       shell: "{{ nohup }} {{ item }} --telegraf {{ tlg }} --target {{ lb }} &"

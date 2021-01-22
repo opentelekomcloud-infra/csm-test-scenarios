@@ -4,18 +4,18 @@
   vars:
     scenario_name: >
       csm_controller
-      hdd_monitoring
+      as_monitoring
 
 - name: Prepare variables
   hosts: localhost
   vars_files:
     - ./vars/csm_controller.yaml
-    - ./vars/hdd_monitoring.yaml
+    - ./vars/as_monitoring.yaml
   tasks:
-    - name: Register nodes
+    - name: Register hosts
       add_host:
-        name: "{{ item }}"
-        groups: hdd_hosts
+        name: as_host
+        ansible_host: "{{ as_monitoring.as_instance_ip }}"
         ansible_ssh_user: linux
         ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
         ansible_ssh_common_args: >
@@ -26,19 +26,13 @@
           -o StrictHostKeyChecking=no
           -o UserKnownHostsFile=/dev/null'
           -o PasswordAuthentication=no
-      loop: "{{ hdd_monitoring.hdd_ecs_local_ips }}"
 
 - name: Start test
-  hosts: hdd_hosts
+  hosts: as_host
   become: yes
   vars:
-    devices:
-      sata: /dev/vdb
-      sas: /dev/vdc
-      ssd: /dev/vdd
+    script_path: /tmp/check_cpu_load_status.sh
   tasks:
-    - name: Create big files on all devices every 5 minutes
-      shell: >
-        /bin/dd if=/dev/urandom of="/mnt/{{ item.key }}/bigfile"
-        bs=1000000 count=1000 oflag=dsync
-      with_items: "{{ lookup('dict', devices) }}"
+    - name: Schedule load script status check
+      shell: {{ script_path }}
+

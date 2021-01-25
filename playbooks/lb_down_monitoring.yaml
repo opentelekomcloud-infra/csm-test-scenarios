@@ -34,4 +34,4 @@
     script_path: /home/linux/test/lb_down_test.sh
   tasks:
     - name: Run test every 5 minutes
-      shell: {{ script_path }}
+      shell: "{{ script_path }}"

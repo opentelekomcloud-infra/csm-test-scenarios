@@ -51,11 +51,6 @@
         state: absent
       ignore_errors: yes
 
-    - name: Copy clouds.yaml to ecs
-      copy:
-        src: /etc/openstack/clouds.yaml
-        dest: "{{ cloud_config }}/"
-
     - name: Start monitoring RDS backups  # noqa 301 305
       shell: "nohup python3 -m csm_test_utils rds_backup_monitor
                --instance_id {{ rds_backup_monitoring.rds_id }}

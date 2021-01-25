@@ -1,0 +1,55 @@
+---
+- name: Prepare controller variables
+  import_playbook: prepare_variables.yaml
+  vars:
+    scenario_name: >
+      csm_controller
+      sfs_monitoring
+
+- name: Prepare variables
+  hosts: localhost
+  vars_files:
+    - ./vars/csm_controller.yaml
+    - ./vars/sfs_monitoring.yaml
+  tasks:
+    - name: Register sfs_host
+      add_host:
+        name: sfs_host
+        ansible_host: "{{ sfs_monitoring.sfs_instance_ip }}"
+        ansible_ssh_user: linux
+        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
+        ansible_ssh_common_args: >
+          -o UserKnownHostsFile=/dev/null
+          -o ProxyCommand='ssh -W %h:%p
+          -q linux@{{ csm_controller.csm_controller_fip }}
+          -i {{ csm_controller.controller_key }}
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null'
+          -o PasswordAuthentication=no
+
+- name: Start test
+  hosts: sfs_host
+  become: yes
+  vars_files:
+    - ./vars/sfs_monitoring.yaml
+  vars:
+    nohup: nohup /usr/bin/python3 -m csm_test_utils
+    tlg: http://localhost:8080
+  tasks:
+    - name: Get reporting processes list from remote host  # noqa 301 305
+      ignore_errors: yes
+      shell: "ps aux | grep 'csm_test_utils sfs_compare' | awk '{print $2}'"
+      register: process_monitor
+
+    - name: Kill running reporting processes  # noqa 301 305
+      ignore_errors: yes
+      shell: "kill {{ process_monitor.stdout_lines[0] }}"
+
+    - name: Waiting for status
+      wait_for:
+        path: "/proc/{{ process_monitor.stdout_lines[0] }}/status"
+        state: absent
+      ignore_errors: yes
+
+    - name: Execute csm_test_utils  # noqa 301 305
+      shell: "{{ nohup }} sfs_compare --telegraf {{ tlg }} &"

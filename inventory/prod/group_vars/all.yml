@@ -2,3 +2,5 @@ key_name: key_csm_controller
 terraform_workspace: temp
 scenario_name: csm_controller
 key_path: /tmp/data
+cloud_name: "{{ lookup('env', 'OS_CLOUD') }}"
+cloud_config: /etc/openstack

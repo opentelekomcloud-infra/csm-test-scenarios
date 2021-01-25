@@ -1,14 +1,16 @@
 ---
 - name: Prepare controller variables
-  import_playbook: prepare_variables.yml
+  import_playbook: prepare_variables.yaml
   vars:
-    scenario_name: 'csm_controller lb_monitoring'
+    scenario_name: >
+      csm_controller
+      lb_monitoring
 
 - name: Prepare variables
   hosts: localhost
   vars_files:
-    - "./vars/csm_controller.yml"
-    - "./vars/lb_monitoring.yml"
+    - ./vars/csm_controller.yaml
+    - ./vars/lb_monitoring.yaml
   tasks:
     - name: Register lb controller host
       add_host:
@@ -24,22 +26,6 @@
           -o StrictHostKeyChecking=no
           -o UserKnownHostsFile=/dev/null'
           -o PasswordAuthentication=no
-
-- name: Prepare csm runner
-  hosts: lb_host
-  become: yes
-  tasks:
-    - name: Install required packages
-      apt:
-        name:
-          - python3-pip
-          - python3-setuptools
-          - python3-wheel
-
-    - name: Install csm-test-utils
-      pip:
-        executable: pip3
-        name: csm-test-utils
 
 - name: Checking reporting processes
   hosts: lb_host
@@ -58,16 +44,16 @@
         state: absent
       ignore_errors: yes
 
-- name: Start reporting for scenario
+- name: Start test
   hosts: lb_host
   become: yes
   vars_files:
-    - "./vars/csm_controller.yml"
-    - "./vars/lb_monitoring.yml"
+    - ./vars/csm_controller.yaml
+    - ./vars/lb_monitoring.yaml
   vars:
     elb_ip: "{{ lb_monitoring.lb_fip }}"
     tlg: "http://{{ csm_controller.csm_controller_fip }}/lb"
-    nohup: "nohup /usr/bin/python3 -m csm_test_utils monitor"
+    nohup: nohup /usr/bin/python3 -m csm_test_utils monitor
   tasks:
     - name: Execute csm_test_utils  # noqa 301 305
       shell: "{{ nohup }} --target {{ elb_ip }} --telegraf {{ tlg }} &"

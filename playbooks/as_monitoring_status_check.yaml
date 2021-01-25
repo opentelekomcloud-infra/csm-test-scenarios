@@ -33,6 +33,6 @@
   vars:
     script_path: /tmp/check_cpu_load_status.sh
   tasks:
-    - name: Schedule load script status check
+    - name: Schedule load script status check  # noqa 301 305
       shell: "{{ script_path }}"
 

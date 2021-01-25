@@ -37,6 +37,6 @@
       sas: /dev/vdc
       ssd: /dev/vdd
   tasks:
-    - name: Reading big files on all devices every 2 minutes
+    - name: Reading big files on all devices every 2 minutes  # noqa 301 305
       shell: /sbin/hdparm -tT "{{ item.value }}"
       with_items: "{{ lookup('dict', devices) }}"

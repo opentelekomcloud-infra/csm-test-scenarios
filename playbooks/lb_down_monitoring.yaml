@@ -33,5 +33,5 @@
   vars:
     script_path: /home/linux/test/lb_down_test.sh
   tasks:
-    - name: Run test every 5 minutes
+    - name: Run test every 5 minutes  # noqa 301 305
       shell: "{{ script_path }}"

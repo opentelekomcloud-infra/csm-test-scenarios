@@ -33,8 +33,5 @@
   vars:
     script_path: /home/linux/test/lb_down_test.sh
   tasks:
-    - name: Schedule test
-      cron:
-        name: Run lb_down monitoring
-        minute: "*/5"
-        job: {{ script_path }}
+    - name: Run test every 5 minutes
+      shell: {{ script_path }}

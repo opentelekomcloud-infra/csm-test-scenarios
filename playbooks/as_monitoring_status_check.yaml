@@ -34,5 +34,5 @@
     script_path: /tmp/check_cpu_load_status.sh
   tasks:
     - name: Schedule load script status check
-      shell: {{ script_path }}
+      shell: "{{ script_path }}"
 

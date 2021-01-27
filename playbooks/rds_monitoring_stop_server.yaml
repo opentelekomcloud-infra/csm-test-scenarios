@@ -1,0 +1,37 @@
+---
+- name: Prepare controller variables
+  import_playbook: prepare_variables.yaml
+  vars:
+    scenario_name: >
+      csm_controller
+      rds_monitoring
+
+- name: Prepare variables
+  hosts: localhost
+  vars_files:
+    - ./vars/csm_controller.yaml
+    - ./vars/rds_monitoring.yaml
+  tasks:
+    - name: Register rds_host
+      add_host:
+        name: rds_host
+        ansible_host: "{{ rds_monitoring.ecs_ip }}"
+        ansible_ssh_user: linux
+        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
+        ansible_ssh_common_args: >
+          -o UserKnownHostsFile=/dev/null
+          -o ProxyCommand='ssh -W %h:%p
+          -q linux@{{ csm_controller.csm_controller_fip }}
+          -i {{ csm_controller.controller_key }}
+          -o StrictHostKeyChecking=no
+          -o UserKnownHostsFile=/dev/null'
+          -o PasswordAuthentication=no
+
+- name: Stop Server
+  hosts: rds_host
+  become: yes
+  vars:
+    server: too_simple_server
+  tasks:
+    name: Stop server
+    command: "{{ server }} stop"

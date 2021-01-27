@@ -4,18 +4,18 @@
   vars:
     scenario_name: >
       csm_controller
-      hdd_monitoring
+      rds_monitoring
 
 - name: Prepare variables
   hosts: localhost
   vars_files:
     - ./vars/csm_controller.yaml
-    - ./vars/hdd_monitoring.yaml
+    - ./vars/rds_monitoring.yaml
   tasks:
-    - name: Register nodes
+    - name: Register rds_host
       add_host:
-        name: "{{ item }}"
-        groups: hdd_hosts
+        name: rds_host
+        ansible_host: "{{ rds_monitoring.ecs_ip }}"
         ansible_ssh_common_args: >
           -o UserKnownHostsFile=/dev/null
           -o ProxyCommand='ssh -W %h:%p
@@ -24,17 +24,13 @@
           -o StrictHostKeyChecking=no
           -o UserKnownHostsFile=/dev/null'
           -o PasswordAuthentication=no
-      loop: "{{ hdd_monitoring.hdd_ecs_local_ips }}"
 
-- name: Start test
-  hosts: hdd_hosts
+- name: Start Server
+  hosts: rds_host
   become: yes
   vars:
-    devices:
-      sata: /dev/vdb
-      sas: /dev/vdc
-      ssd: /dev/vdd
+    server: too_simple_server
+    server_config: /opt/too-simple/config.yml
   tasks:
-    - name: Reading big files on all devices every 2 minutes  # noqa 301 305
-      shell: /sbin/hdparm -tT "{{ item.value }}"
-      with_items: "{{ lookup('dict', devices) }}"
+    - name: Start server  # noqa 301 305
+      command: "{{ server }} --config {{ server_config }}"

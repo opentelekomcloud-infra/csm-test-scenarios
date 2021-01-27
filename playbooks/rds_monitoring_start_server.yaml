@@ -34,5 +34,5 @@
     server: too_simple_server
     server_config: /opt/too-simple/config.yml
   tasks:
-    name: Start server
+    name: Start server  # noqa 301 305
     command: "{{ server }} --config {{ server_config }}"

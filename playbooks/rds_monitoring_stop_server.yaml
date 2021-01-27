@@ -33,5 +33,5 @@
   vars:
     server: too_simple_server
   tasks:
-    name: Stop server
+    name: Stop server  # noqa 301 305
     command: "{{ server }} stop"

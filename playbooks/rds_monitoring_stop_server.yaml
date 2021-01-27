@@ -16,8 +16,6 @@
       add_host:
         name: rds_host
         ansible_host: "{{ rds_monitoring.ecs_ip }}"
-        ansible_ssh_user: linux
-        ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"
         ansible_ssh_common_args: >
           -o UserKnownHostsFile=/dev/null
           -o ProxyCommand='ssh -W %h:%p
@@ -33,5 +31,5 @@
   vars:
     server: too_simple_server
   tasks:
-    name: Stop server  # noqa 301 305
-    command: "{{ server }} stop"
+    - name: Stop  # noqa 301 305
+      command: "{{ server }} stop"

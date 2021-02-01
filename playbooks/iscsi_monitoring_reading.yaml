@@ -32,5 +32,5 @@
     device: /dev/sda
     mount_point: /mnt/scsi
   tasks:
-    - name: Random readings on device every 2 minutes  # noqa 301 305
-      shell: /sbin/hdparm -tT "{{ device }}"
+    - name: Reading test on iSCSI device  # noqa 301 305
+      command: /sbin/hdparm -tT "{{ device }}"

@@ -32,7 +32,7 @@
     device: /dev/sda
     mount_point: /mnt/scsi
   tasks:
-    - name: Create big file on SCSI device every 5 minutes  # noqa 301 305
-      shell: >
+    - name: Create big file on iSCSI device  # noqa 301 305
+      command: >
           /bin/dd if=/dev/urandom of="{{ mount_point }}/bigfile"
           bs=5000000 count=100 oflag=dsync

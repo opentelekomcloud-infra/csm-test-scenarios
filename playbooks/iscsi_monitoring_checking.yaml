@@ -32,5 +32,5 @@
     device: /dev/sda
     mount_point: /mnt/scsi
   tasks:
-    - name: Connection test every minute  # noqa 301 305
-      shell: /tmp/iscsi_connection_status.sh
+    - name: Check connection to iscsi device  # noqa 301 305
+      command: /tmp/iscsi_connection_status.sh

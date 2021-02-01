@@ -35,8 +35,8 @@
       sas: /dev/vdc
       ssd: /dev/vdd
   tasks:
-    - name: Create big files on all devices every 5 minutes  # noqa 301 305
-      shell: >
+    - name: Create big file on all devices  # noqa 301 305
+      command: >
         /bin/dd if=/dev/urandom of="/mnt/{{ item.key }}/bigfile"
         bs=1000000 count=1000 oflag=dsync
       with_items: "{{ lookup('dict', devices) }}"

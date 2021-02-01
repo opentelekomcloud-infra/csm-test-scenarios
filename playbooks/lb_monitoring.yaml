@@ -53,5 +53,5 @@
     tlg: "http://{{ csm_controller.csm_controller_fip }}/lb"
     nohup: nohup /usr/bin/python3 -m csm_test_utils monitor
   tasks:
-    - name: Execute csm_test_utils  # noqa 301 305
-      shell: "{{ nohup }} --target {{ elb_ip }} --telegraf {{ tlg }} &"
+    - name: Get metrics from loadbalancer  # noqa 301 305
+      command: "{{ nohup }} --target {{ elb_ip }} --telegraf {{ tlg }} &"

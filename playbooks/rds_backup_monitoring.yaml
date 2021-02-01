@@ -49,8 +49,8 @@
         state: absent
       ignore_errors: yes
 
-    - name: Start monitoring RDS backups  # noqa 301 305
-      shell: "nohup python3 -m csm_test_utils rds_backup_monitor
+    - name: Get metrics from RDS backup  # noqa 301 305
+      command: "nohup python3 -m csm_test_utils rds_backup_monitor
                --instance_id {{ rds_backup_monitoring.rds_id }}
                --cloud_config {{ cloud_config }}
                --cloud_name {{ cloud_name }}

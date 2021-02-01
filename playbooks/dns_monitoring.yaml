@@ -49,5 +49,5 @@
         state: absent
       ignore_errors: yes
 
-    - name: Start monitoring  # noqa 301 305
-      shell: "{{ nohup }} --telegraf {{ tlg }} --dns_name {{ dns }} &"
+    - name: Get metrics from internal dns  # noqa 301 305
+      command: "{{ nohup }} --telegraf {{ tlg }} --dns_name {{ dns }} &"

@@ -48,5 +48,5 @@
         state: absent
       ignore_errors: yes
 
-    - name: Execute csm_test_utils  # noqa 301 305
-      shell: "{{ nohup }} --target {{ server }} --telegraf {{ tlg }} &"
+    - name: Get metrics from RDS instance # noqa 301 305
+      command: "{{ nohup }} --target {{ server }} --telegraf {{ tlg }} &"

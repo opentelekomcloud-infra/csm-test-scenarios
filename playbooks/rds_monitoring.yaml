@@ -48,5 +48,5 @@
         state: absent
       ignore_errors: yes
 
-    - name: Get metrics from RDS instance # noqa 301 305
+    - name: Get metrics from RDS instance  # noqa 301 305
       command: "{{ nohup }} --target {{ server }} --telegraf {{ tlg }} &"

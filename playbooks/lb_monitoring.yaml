@@ -49,9 +49,8 @@
     - ./vars/csm_controller.yaml
     - ./vars/lb_monitoring.yaml
   vars:
-    elb_ip: "{{ lb_monitoring.lb_fip }}"
-    tlg: "http://{{ csm_controller.csm_controller_fip }}/lb"
-    nohup: nohup /usr/bin/python3 -m csm_test_utils monitor
+    elb: "http://{{ lb_monitoring.lb_fip }}"
+    python: /usr/bin/python3 -m csm_test_utils lb_load
   tasks:
     - name: Get metrics from loadbalancer  # noqa 301 305
-      command: "{{ nohup }} --target {{ elb_ip }} --telegraf {{ tlg }} &"
+      command: "{{ python }} --target {{ elb }}"

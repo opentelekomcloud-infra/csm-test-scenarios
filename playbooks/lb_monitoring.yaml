@@ -50,7 +50,7 @@
     - ./vars/lb_monitoring.yaml
   vars:
     elb: "http://{{ lb_monitoring.lb_fip }}"
-    python: /usr/bin/python3 -m csm_test_utils lb_load
+    lb_load: /usr/bin/python3 -m csm_test_utils lb_load
   tasks:
     - name: Get metrics from loadbalancer  # noqa 301 305
-      command: "{{ python }} --target {{ elb }}"
+      command: "{{ lb_load }} --target {{ elb }}"

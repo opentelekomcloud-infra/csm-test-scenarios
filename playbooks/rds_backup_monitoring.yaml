@@ -18,12 +18,16 @@
         ansible_host: "{{ rds_backup_monitoring.ecs_ip }}"
         ansible_ssh_common_args: >
           -o UserKnownHostsFile=/dev/null
+          -o StrictHostKeyChecking=no
+          -o IdentityFile="{{ key_path }}/{{ key_name }}"
+          -o KbdInteractiveAuthentication=no
+          -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey
+          -o User=linux
+          -o PasswordAuthentication=no
           -o ProxyCommand='ssh -W %h:%p
           -q linux@{{ csm_controller.csm_controller_fip }}
-          -i {{ csm_controller.controller_key }}
-          -o StrictHostKeyChecking=no
-          -o UserKnownHostsFile=/dev/null'
-          -o PasswordAuthentication=no
+          -i {{ csm_controller.controller_key }}'
+
 
 - name: Checking reporting processes
   hosts: rds_backup_host
@@ -54,17 +58,22 @@
     run_option: sqla
     drivername: "postgresql+psycopg2"
     test_scripts_path: /tmp/test-scripts
-    source: "{{ test_scripts_path }}/{{ run_option }}/data.yaml"
-    pg_db_url: "{{ hostvars.local.db_address }}"
+    source: "{{ test_scripts_path }}/{{ run_option }}.yaml"
+    pg_db_url: "{{ rds_backup_monitoring.db_address }}"
     pg_database: entities
-    pg_username: "{{ hostvars.local.db_username }}"
-    pg_password: "{{ hostvars.local.db_password }}"
-    pg_host: "{{ hostvars.local.db_host }}"
-    pg_port: "{{ hostvars.local.db_port }}"
-    rds_backup_monitor:  /usr/bin/python3 -m -m csm_test_utils rds_backup_monitor
+    pg_username: "{{ rds_backup_monitoring.db_username }}"
+    pg_password: "{{ rds_backup_monitoring.db_password }}"
+    pg_host: "{{ rds_backup_monitoring.db_host }}"
+    pg_port: "{{ rds_backup_monitoring.db_port }}"
+    rds_backup_generate_data:  /usr/bin/python3 -m csm_test_utils rds_backup_generate_data
   tasks:
+    - name: Copy data sources to host
+      copy:
+        src: data_sources/
+        dest: "{{ test_scripts_path }}/"
+
     - name: Get metrics from RDS backup  # noqa 301 305
-      command: "{{ rds_backup_monitor }} --telegraf {{ tlg }} --target {{ ecs_instance_ip }}
+      command: "{{ rds_backup_generate_data }} --telegraf {{ tlg }} --target {{ ecs_instance_ip }}
                --run_option {{ run_option }}
                --source {{ source }}
                --drivername {{ drivername }}

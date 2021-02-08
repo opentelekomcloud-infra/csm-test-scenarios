@@ -28,7 +28,6 @@
           -q linux@{{ csm_controller.csm_controller_fip }}
           -i {{ csm_controller.controller_key }}'
 
-
 - name: Checking reporting processes
   hosts: rds_backup_host
   become: yes
@@ -65,7 +64,7 @@
     pg_password: "{{ rds_backup_monitoring.db_password }}"
     pg_host: "{{ rds_backup_monitoring.db_host }}"
     pg_port: "{{ rds_backup_monitoring.db_port }}"
-    rds_backup_generate_data:  /usr/bin/python3 -m csm_test_utils rds_backup_generate_data
+    rds_backup_generate_data: /usr/bin/python3 -m csm_test_utils rds_backup_generate_data
   tasks:
     - name: Copy data sources to host
       copy:

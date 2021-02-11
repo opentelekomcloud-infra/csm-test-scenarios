@@ -18,12 +18,32 @@
         ansible_host: "{{ rds_backup_monitoring.ecs_ip }}"
         ansible_ssh_common_args: >
           -o UserKnownHostsFile=/dev/null
+          -o StrictHostKeyChecking=no
+          -o IdentityFile="{{ key_path }}/{{ key_name }}"
+          -o KbdInteractiveAuthentication=no
+          -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey
+          -o User=linux
+          -o PasswordAuthentication=no
           -o ProxyCommand='ssh -W %h:%p
           -q linux@{{ csm_controller.csm_controller_fip }}
-          -i {{ csm_controller.controller_key }}
-          -o StrictHostKeyChecking=no
-          -o UserKnownHostsFile=/dev/null'
-          -o PasswordAuthentication=no
+          -i {{ csm_controller.controller_key }}'
+
+- name: Checking reporting processes
+  hosts: rds_backup_host
+  become: yes
+  tasks:
+    - name: Get reporting processes list from remote host  # noqa 301 305
+      ignore_errors: yes
+      shell: "ps aux | grep 'csm_test_utils rds_backup_monitor' | awk '{print $2}'"
+      register: process_monitor
+    - name: Kill running reporting processes  # noqa 301 305
+      ignore_errors: yes
+      shell: "kill {{ process_monitor.stdout_lines[0] }}"
+    - name: Waiting for status
+      wait_for:
+        path: "/proc/{{ process_monitor.stdout_lines[0] }}/status"
+        state: absent
+      ignore_errors: yes
 
 - name: Start test
   hosts: rds_backup_host
@@ -33,27 +53,31 @@
   vars:
     endpoint: https://rds.eu-de.otc.t-systems.com
     ecs_instance_ip: "{{ rds_backup_monitoring.ecs_ip }}"
+    tlg: http://localhost:8080
+    run_option: sqla
+    drivername: "postgresql+psycopg2"
+    test_scripts_path: /tmp/test-scripts
+    source: "{{ test_scripts_path }}/{{ run_option }}.yaml"
+    pg_db_url: "{{ rds_backup_monitoring.db_address }}"
+    pg_database: entities
+    pg_username: "{{ rds_backup_monitoring.db_username }}"
+    pg_password: "{{ rds_backup_monitoring.db_password }}"
+    pg_host: "{{ rds_backup_monitoring.db_host }}"
+    pg_port: "{{ rds_backup_monitoring.db_port }}"
+    rds_backup_generate_data: /usr/bin/python3 -m csm_test_utils rds_backup_generate_data
   tasks:
-    - name: Get running reporting processes list from remote host  # noqa 301 305
-      ignore_errors: yes
-      shell: "ps aux | grep 'csm_test_utils rds_backup_monitor' | awk '{print $2}'"
-      register: process_monitor
-
-    - name: Kill running reporting processes  # noqa 301 305
-      ignore_errors: yes
-      shell: "kill {{ process_monitor.stdout_lines[0] }}"
-
-    - name: Waiting for status
-      wait_for:
-        path: "/proc/{{ process_monitor.stdout_lines[0] }}/status"
-        state: absent
-      ignore_errors: yes
+    - name: Copy data sources to host
+      copy:
+        src: data_sources/
+        dest: "{{ test_scripts_path }}/"
 
     - name: Get metrics from RDS backup  # noqa 301 305
-      command: "nohup python3 -m csm_test_utils rds_backup_monitor
-               --instance_id {{ rds_backup_monitoring.rds_id }}
-               --cloud_config {{ cloud_config }}
-               --cloud_name {{ cloud_name }}
-               --endpoint {{ endpoint }}
-               --target {{ rds_backup_monitoring.ecs_ip }}
-               --telegraf 'http://{{ rds_backup_monitoring.ecs_ip }}' &"
+      command: "{{ rds_backup_generate_data }} --telegraf {{ tlg }} --target {{ ecs_instance_ip }}
+               --run_option {{ run_option }}
+               --source {{ source }}
+               --drivername {{ drivername }}
+               --host {{ pg_host }}
+               --port {{ pg_port }}
+               --username {{ pg_username }}
+               --password {{ pg_password }}
+               --database {{ pg_database }}"

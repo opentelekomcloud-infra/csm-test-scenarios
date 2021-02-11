@@ -1,2 +1,2 @@
-ansible-lint
+ansible-lint>=4.3,<5
 yamllint

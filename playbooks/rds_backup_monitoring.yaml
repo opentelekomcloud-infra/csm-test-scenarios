@@ -21,7 +21,7 @@
           -o StrictHostKeyChecking=no
           -o IdentityFile="{{ key_path }}/{{ key_name }}"
           -o KbdInteractiveAuthentication=no
-          -o PreferredAuthentications=gssapi-with-mic, gssapi-keyex, hostbased, publickey
+          -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey
           -o User=linux
           -o PasswordAuthentication=no
           -o ProxyCommand='ssh -W %h:%p

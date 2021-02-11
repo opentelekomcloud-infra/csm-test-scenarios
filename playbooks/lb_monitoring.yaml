@@ -1,56 +1,25 @@
 ---
-- name: Prepare controller variables
-  import_playbook: prepare_variables.yaml
-  vars:
-    scenario_name: >
-      csm_controller
-      lb_monitoring
-
-- name: Prepare variables
+- name: Check csm utils
   hosts: localhost
-  vars_files:
-    - ./vars/csm_controller.yaml
-    - ./vars/lb_monitoring.yaml
-  tasks:
-    - name: Register lb controller host
-      add_host:
-        name: "{{ lb_monitoring.lb_ctrl_ip }}"
-        groups: lb_host
-        ansible_ssh_common_args: >
-          -o UserKnownHostsFile=/dev/null
-          -o ProxyCommand='ssh -W %h:%p
-          -q linux@{{ csm_controller.csm_controller_fip }}
-          -i {{ csm_controller.controller_key }}
-          -o StrictHostKeyChecking=no
-          -o UserKnownHostsFile=/dev/null'
-          -o PasswordAuthentication=no
-
-- name: Checking reporting processes
-  hosts: lb_host
   become: yes
   tasks:
-    - name: Get reporting processes list from remote host  # noqa 301 305
-      ignore_errors: yes
-      shell: "ps aux | grep 'csm_test_utils monitor' | awk '{print $2}'"
-      register: process_monitor
-    - name: Kill running reporting processes  # noqa 301 305
-      ignore_errors: yes
-      shell: "kill {{ process_monitor.stdout_lines[0] }}"
-    - name: Waiting for status
-      wait_for:
-        path: "/proc/{{ process_monitor.stdout_lines[0] }}/status"
-        state: absent
-      ignore_errors: yes
+    - name: Install PIP3
+      apt:
+        name:
+          - python3-setuptools
+          - python3-pip
 
-- name: Start test
-  hosts: lb_host
+    - name: Install csm-test-utils
+      pip:
+        executable: pip3
+        name: csm-test-utils
+
+- name: Gather metrics
+  hosts: localhost
   become: yes
-  vars_files:
-    - ./vars/csm_controller.yaml
-    - ./vars/lb_monitoring.yaml
   vars:
-    elb: "http://{{ lb_monitoring.lb_fip }}"
     lb_load: /usr/bin/python3 -m csm_test_utils lb_load
+    target: "--target http://{{ elb_address }}"
   tasks:
     - name: Get metrics from loadbalancer  # noqa 301 305
-      command: "{{ lb_load }} --target {{ elb }}"
+      command: "{{ lb_load }} {{ target }} {{ environment }} {{ zone }}"

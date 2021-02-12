@@ -3,12 +3,6 @@
   hosts: localhost
   become: yes
   tasks:
-    - name: Install PIP3
-      apt:
-        name:
-          - python3-setuptools
-          - python3-pip
-
     - name: Install csm-test-utils
       pip:
         executable: pip3
@@ -22,4 +16,4 @@
     target: "--target http://{{ elb_address }}"
   tasks:
     - name: Get metrics from loadbalancer  # noqa 301 305
-      command: "{{ lb_load }} {{ target }} {{ environment }} {{ zone }}"
+      command: "{{ lb_load }} {{ target }}"

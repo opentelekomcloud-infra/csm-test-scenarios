@@ -4,5 +4,3 @@ scenario_name: csm_controller
 key_path: /tmp/data
 cloud_name: "{{ lookup('env', 'OS_CLOUD') }}"
 cloud_config: /tmp
-ansible_ssh_user: linux
-ansible_ssh_private_key_file: "{{ csm_controller.controller_key }}"

@@ -1,16 +1,6 @@
 ---
-- name: Check csm utils
-  hosts: localhost
-  become: yes
-  tasks:
-    - name: Install csm-test-utils
-      pip:
-        executable: pip3
-        name: csm-test-utils
-
 - name: Gather metrics
   hosts: localhost
-  become: yes
   vars:
     lb_load: /usr/bin/python3 -m csm_test_utils lb_load
     target: "--target http://{{ elb_address }}"

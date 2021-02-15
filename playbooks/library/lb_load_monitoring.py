@@ -16,7 +16,7 @@ DOCUMENTATION = '''
 ---
 module: lb_load_monitoring
 short_description: Load balancer response times.
-version_added: "0.0.1"
+version_added: "1.0.0"
 author: "Anton Sidelnikov (@anton-sidelnikov)"
 description:
   - Get metrics from load balancer hosts and push it to unix socket server
@@ -111,7 +111,7 @@ class LbLoadMonitoring(AnsibleModule):
         metrics = []
         for _ in range(15):
             try:
-                res = requests.get(self.params['lb_ip'], headers={'Connection': 'close'}, timeout=timeout)
+                res = requests.get(f"http://{self.params['lb_ip']}", headers={'Connection': 'close'}, timeout=timeout)
             except requests.Timeout as ex:
                 LOGGER.exception('Timeout sending request to LB')
                 metrics.append(Metric(

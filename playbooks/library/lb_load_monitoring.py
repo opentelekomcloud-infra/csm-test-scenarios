@@ -124,7 +124,7 @@ class LbLoadMonitoring(MessageModule):
                     metric_type='ms',
                     az=INSTANCES_AZ.get(res.headers['Server']))
                 )
-            # sleep(1)
+            sleep(1)
         if SOCKET:
             for metric in metrics:
                 self.push_metric(metric, SOCKET)

@@ -16,15 +16,6 @@ import datetime
 import json
 import socket
 
-try:
-    import openstack as sdk
-    import otcextensions
-    from otcextensions import sdk as otc_sdk
-
-    HAS_LIBRARIES = True
-except ImportError:
-    HAS_LIBRARIES = False
-
 from ansible.module_utils.basic import AnsibleModule
 
 

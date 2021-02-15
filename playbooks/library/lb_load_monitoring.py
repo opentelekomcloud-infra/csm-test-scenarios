@@ -24,6 +24,7 @@ options:
   lb_ip:
     description: IP address of target load balancer.
     type: str
+    required: true
 requirements: []
 '''
 
@@ -65,8 +66,6 @@ pushed_metrics:
       description: Message type('metric' is default value).
       type: str
       sample: "metric"
-    
-      
 '''
 
 EXAMPLES = '''
@@ -80,8 +79,7 @@ import os
 from time import sleep
 
 import requests
-from ansible.module_utils.basic import AnsibleModule
-from playbooks.library.common.message import Metric
+from ansible.module_utils.message import MessageModule
 
 LB_TIMING = 'csm_lb_timings'
 LB_TIMEOUT = 'csm_lb_timeout'
@@ -98,42 +96,40 @@ INSTANCES_AZ = {
 SOCKET = os.getenv("APIMON_PROFILER_MESSAGE_SOCKET", "")
 
 
-class LbLoadMonitoring(AnsibleModule):
-    module = AnsibleModule(
-        argument_spec=dict(
-            lb_ip=dict(type='str', required=True)
-        )
+class LbLoadMonitoring(MessageModule):
+    argument_spec=dict(
+        lb_ip=dict(type='str', required=True),
+        timeout=dict(type='int', default=20)
     )
 
     def run(self):
 
-        timeout = 20
+        timeout = self.params['timeout']
         metrics = []
-        for _ in range(15):
+        for _ in range(30):
             try:
                 res = requests.get(f"http://{self.params['lb_ip']}", headers={'Connection': 'close'}, timeout=timeout)
             except requests.Timeout as ex:
                 LOGGER.exception('Timeout sending request to LB')
-                metrics.append(Metric(
+                metrics.append(self.create_metric(
                     name=LB_TIMEOUT,
                     value=timeout * 1000,
                     metric_type='ms',
-                    az='Timeout')
+                    az='default')
                 )
             else:
-                metrics.append(Metric(
+                metrics.append(self.create_metric(
                     name=LB_TIMING,
                     value=int(res.elapsed.microseconds / 1000),
                     metric_type='ms',
                     az=INSTANCES_AZ.get(res.headers['Server']))
                 )
-            sleep(1)
+            # sleep(1)
         if SOCKET:
             for metric in metrics:
-                push_metric(metric, SOCKET)
-
-        self.exit(changed=False, pushed_metrics=metrics)
-
+                self.push_metric(metric, SOCKET)
+            self.exit(changed=True, pushed_metrics=metrics)
+        self.fail_json(msg='socket must be set')
 
 def main():
     module = LbLoadMonitoring()

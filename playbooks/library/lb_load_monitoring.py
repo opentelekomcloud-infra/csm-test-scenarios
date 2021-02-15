@@ -101,10 +101,11 @@ class LbLoadMonitoring(MessageModule):
     def run(self):
 
         timeout = self.params['timeout']
+        address = f"http://{self.params['lb_ip']}"
         metrics = []
         for _ in range(30):
             try:
-                res = requests.get(f"http://{self.params['lb_ip']}", headers={'Connection': 'close'}, timeout=timeout)
+                res = requests.get(address, headers={'Connection': 'close'}, timeout=timeout)
             except requests.Timeout:
                 self.log('timeout sending request to LB')
                 metrics.append(self.create_metric(

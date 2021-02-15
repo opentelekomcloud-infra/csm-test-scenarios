@@ -11,6 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+from time import sleep
+
+import requests
+from ansible.module_utils.message import MessageModule
+
 DOCUMENTATION = '''
 ---
 module: lb_load_monitoring
@@ -21,10 +27,19 @@ description:
   - Get metrics from load balancer hosts and push it to unix socket server
   - APIMON_PROFILER_MESSAGE_SOCKET environment variable should be set.
 options:
-  lb_ip:
+  target_address:
     description: IP address of target load balancer.
     type: str
     required: true
+  timeout:
+    description: Request timeout value.
+    type: int
+  protocol:
+    description: Load balancer protocol.
+    type: str
+  request_count:
+    description: Count of requests.
+    type: int
 requirements: []
 '''
 
@@ -74,11 +89,6 @@ EXAMPLES = '''
     lb_ip: "80.158.53.138"
   register: out
 '''
-import os
-from time import sleep
-
-import requests
-from ansible.module_utils.message import MessageModule
 
 LB_TIMING = 'csm_lb_timings'
 LB_TIMEOUT = 'csm_lb_timeout'
@@ -94,16 +104,18 @@ SOCKET = os.getenv("APIMON_PROFILER_MESSAGE_SOCKET", "")
 
 class LbLoadMonitoring(MessageModule):
     argument_spec = dict(
-        lb_ip=dict(type='str', required=True),
-        timeout=dict(type='int', default=20)
+        target_address=dict(type='str', required=True),
+        timeout=dict(type='int', default=20),
+        protocol=dict(type='str', default='http'),
+        request_count=dict(type='int', default=30)
     )
 
     def run(self):
 
         timeout = self.params['timeout']
-        address = f"http://{self.params['lb_ip']}"
+        address = f"{self.params['protocol']}://{self.params['target_address']}"
         metrics = []
-        for _ in range(30):
+        for _ in range(self.params['request_count']):
             try:
                 res = requests.get(address, headers={'Connection': 'close'}, timeout=timeout)
             except requests.Timeout:

@@ -4,4 +4,4 @@
   tasks:
     - name: Get metrics from loadbalancer
       lb_load_monitoring:
-        lb_ip: "{{ elb_address }}"
+        target_address: "{{ elb_address }}"

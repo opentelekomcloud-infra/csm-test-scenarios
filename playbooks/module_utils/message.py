@@ -57,15 +57,14 @@ class MessageModule:
             msg {str} -- Debug message.
         """
         if self.ansible._debug or self.ansible._verbosity > 2:
-            self.ansible.log(
-                " ".join(['[DEBUG]', msg]))
+            self.ansible.log(f'[DEBUG] {msg}')
 
     @abc.abstractmethod
     def run(self):
         pass
 
     def __call__(self):
-        """Execute `run` function when calling the class.
+        """Execute `run` function when calling the instance.
         """
 
         try:
@@ -90,7 +89,7 @@ class MessageModule:
                       environment: str = None,
                       zone: str = None, **kwargs):
         """
-
+        Creates statsd type metric
         :param name: Metric name
         :param value: Gathered value
         :param environment:
@@ -102,22 +101,12 @@ class MessageModule:
             'name': name,
             'value': value,
             'environment': environment,
-            'zone': zone
+            'zone': zone,
+            'metric_type': kwargs.get('metric_type', 'ms'),
+            'az': kwargs.get('az', 'default'),
+            'timestamp': kwargs.get('timestamp', datetime.datetime.now().isoformat()),
+            '__type': kwargs.get('__type', 'metric')
         }
-        if 'metric_type' in kwargs:
-            message['metric_type'] = kwargs['metric_type']
-        if 'az' in kwargs:
-            message['az'] = kwargs['az']
-        else:
-            message['az'] = 'default'
-        if 'timestamp' in kwargs:
-            message['timestamp'] = kwargs['timestamp']
-        else:
-            message['timestamp'] = datetime.datetime.now().isoformat()
-        if '__type' in kwargs:
-            message['__type'] = kwargs['__type']
-        else:
-            message['__type'] = 'metric'
 
         return message
 

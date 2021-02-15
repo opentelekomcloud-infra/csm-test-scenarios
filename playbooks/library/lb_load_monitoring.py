@@ -34,12 +34,15 @@ options:
   timeout:
     description: Request timeout value.
     type: int
+    default: 20
   protocol:
     description: Load balancer protocol.
     type: str
+    default: http
   request_count:
     description: Count of requests.
     type: int
+    default: 30
 requirements: []
 '''
 

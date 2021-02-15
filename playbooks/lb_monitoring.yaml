@@ -1,9 +1,7 @@
 ---
 - name: Gather metrics
   hosts: localhost
-  vars:
-    lb_load: /usr/bin/python3 -m csm_test_utils lb_load
-    target: "--target http://{{ elb_address }}"
   tasks:
-    - name: Get metrics from loadbalancer  # noqa 301 305
-      command: "{{ lb_load }} {{ target }}"
+    - name: Get metrics from loadbalancer
+      lb_load_monitoring:
+        target_address: "{{ elb_address }}"

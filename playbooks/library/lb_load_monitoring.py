@@ -74,7 +74,6 @@ EXAMPLES = '''
     lb_ip: "80.158.53.138"
   register: out
 '''
-import logging
 import os
 from time import sleep
 
@@ -83,9 +82,6 @@ from ansible.module_utils.message import MessageModule
 
 LB_TIMING = 'csm_lb_timings'
 LB_TIMEOUT = 'csm_lb_timeout'
-
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
 
 INSTANCES_AZ = {
     'lb-monitoring-instance0-prod': 'eu-de-01',
@@ -97,7 +93,7 @@ SOCKET = os.getenv("APIMON_PROFILER_MESSAGE_SOCKET", "")
 
 
 class LbLoadMonitoring(MessageModule):
-    argument_spec=dict(
+    argument_spec = dict(
         lb_ip=dict(type='str', required=True),
         timeout=dict(type='int', default=20)
     )
@@ -109,8 +105,8 @@ class LbLoadMonitoring(MessageModule):
         for _ in range(30):
             try:
                 res = requests.get(f"http://{self.params['lb_ip']}", headers={'Connection': 'close'}, timeout=timeout)
-            except requests.Timeout as ex:
-                LOGGER.exception('Timeout sending request to LB')
+            except requests.Timeout:
+                self.log('timeout sending request to LB')
                 metrics.append(self.create_metric(
                     name=LB_TIMEOUT,
                     value=timeout * 1000,
@@ -130,6 +126,7 @@ class LbLoadMonitoring(MessageModule):
                 self.push_metric(metric, SOCKET)
             self.exit(changed=True, pushed_metrics=metrics)
         self.fail_json(msg='socket must be set')
+
 
 def main():
     module = LbLoadMonitoring()

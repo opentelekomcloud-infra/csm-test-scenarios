@@ -10,7 +10,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 
 DOCUMENTATION = '''
 ---
@@ -76,12 +75,13 @@ EXAMPLES = '''
     lb_ip: "80.158.53.138"
   register: out
 '''
+import logging
 import os
-import requests
-
-from .common.message import Metric, push_metric
-from ansible.module_utils.basic import AnsibleModule
 from time import sleep
+
+import requests
+from ansible.module_utils.basic import AnsibleModule
+from playbooks.library.common.message import Metric
 
 LB_TIMING = 'csm_lb_timings'
 LB_TIMEOUT = 'csm_lb_timeout'

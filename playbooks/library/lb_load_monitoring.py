@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from time import sleep
 
 import requests
@@ -102,8 +101,6 @@ INSTANCES_AZ = {
     'lb-monitoring-instance2-prod': 'eu-de-03',
 }
 
-SOCKET = os.getenv("APIMON_PROFILER_MESSAGE_SOCKET", "")
-
 
 class LbLoadMonitoring(MessageModule):
     argument_spec = dict(
@@ -114,7 +111,6 @@ class LbLoadMonitoring(MessageModule):
     )
 
     def run(self):
-
         timeout = self.params['timeout']
         address = f"{self.params['protocol']}://{self.params['target_address']}"
         metrics = []
@@ -137,9 +133,9 @@ class LbLoadMonitoring(MessageModule):
                     az=INSTANCES_AZ.get(res.headers['Server']))
                 )
             sleep(1)
-        if SOCKET:
+        if self.params['socket']:
             for metric in metrics:
-                self.push_metric(metric, SOCKET)
+                self.push_metric(metric, self.params['socket'])
             self.exit(changed=True, pushed_metrics=metrics)
         self.fail_json(msg='socket must be set')
 

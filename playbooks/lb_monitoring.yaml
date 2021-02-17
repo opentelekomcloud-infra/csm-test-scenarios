@@ -3,9 +3,16 @@
   hosts: localhost
   tasks:
     - name: Get inventory from swift
-      command:
-        argv:
-          - python3 /files/swift_cli.py
+      script: >
+        swift_cli.py
+        --state fetch
+        --container csm
+        --object_name lb_monitoring_inventory
+      register: result
+
+    - name: facts
+      set_fact:
+        elb_address: "{{ (result.stdout | from_json).lb_monitoring.lb_fip }}"
       register: result
 
     - name: Get metrics from loadbalancer

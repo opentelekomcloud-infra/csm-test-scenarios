@@ -2,6 +2,12 @@
 - name: Gather metrics
   hosts: localhost
   tasks:
+    - name: Get inventory from swift
+      command:
+        argv:
+          - python3 /files/swift_cli.py
+      register: result
+
     - name: Get metrics from loadbalancer
       lb_load_monitoring:
         target_address: "{{ elb_address }}"

@@ -14,6 +14,7 @@ OK_CODES = [200, 201, 202]
 
 class SwiftClient:
     """Class for Swift interactions"""
+
     def __init__(self):
         self.session = requests.session()
         self.os_config = OpenStackConfig()
@@ -166,10 +167,7 @@ def parse_params():
     return args
 
 
-def main():
-    args = parse_params()
-    client = SwiftClient()
-
+def run(args, client):
     if args.state == 'present':
         containers = [item['name'] for item in client.list_containers()]
         if args.container not in containers:
@@ -205,6 +203,12 @@ def main():
             return print(result)
         result = client.list_container_objects(args.container)
         return print(result)
+
+
+def main():
+    args = parse_params()
+    client = SwiftClient()
+    return run(args, client)
 
 
 if __name__ == '__main__':

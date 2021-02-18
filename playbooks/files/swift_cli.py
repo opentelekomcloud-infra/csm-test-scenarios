@@ -29,6 +29,7 @@ class SwiftClient:
     def list_containers(self) -> dict:
         """
         List of available Swift containers
+
         :return: dict of available containers
         """
         try:
@@ -43,6 +44,7 @@ class SwiftClient:
     def list_container_objects(self, container) -> dict:
         """
         List objects in container
+
         :param container: container name
         :return: dict of available container objects
         """
@@ -58,6 +60,7 @@ class SwiftClient:
     def create_container(self, container):
         """
         Creates container
+
         :param container: container name
         :return:
         """
@@ -70,6 +73,7 @@ class SwiftClient:
     def create_object(self, container, object_name, body: dict):
         """
         Creates object in selected container
+
         :param container: container name
         :param object_name: object name
         :param body: content
@@ -87,6 +91,7 @@ class SwiftClient:
     def object_content(self, container, object_name):
         """
         Returns object content
+
         :param container: container name
         :param object_name: object name
         :return:
@@ -104,6 +109,7 @@ class SwiftClient:
     def delete_object(self, container, object_name):
         """
         Deletes object in selected container
+
         :param container: container name
         :param object_name: object name
         :return:
@@ -121,6 +127,7 @@ class SwiftClient:
     def delete_container(self, container):
         """
         Deletes empty container
+
         :param container: container name
         :return:
         """
@@ -145,6 +152,7 @@ def is_path(path):
 def read_yaml(path) -> dict:
     """
     Reads yaml file
+
     :param path: path to file
     :return: yaml file data as dict
     """

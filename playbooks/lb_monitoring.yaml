@@ -2,7 +2,7 @@
 - name: Gather metrics
   hosts: localhost
   tasks:
-    - name: Swift cntr object
+    - name: Swift get object
       swift_client:
         state: "{{ swift_operation }}"
         container: "{{ swift_container }}"
@@ -11,7 +11,7 @@
 
     - name: facts
       set_fact:
-        elb_address: "{{ result.object.lb_monitoring.lb_fip }}"
+        elb_address: "{{ result.data.lb_monitoring.lb_fip }}"
 
     - name: Get metrics from loadbalancer
       lb_load_monitoring:

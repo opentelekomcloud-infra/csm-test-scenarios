@@ -14,13 +14,16 @@
 import abc
 import datetime
 import json
+import os
 import socket
 
 from ansible.module_utils.basic import AnsibleModule
 
 
 def message_full_argument_spec(**kwargs):
-    spec = dict()
+    spec = dict(
+        socket=dict(default=os.getenv("APIMON_PROFILER_MESSAGE_SOCKET", ""))
+    )
     spec.update(kwargs)
     return spec
 

@@ -10,11 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import os
 
-import yaml
 from ansible.module_utils.swift import SwiftModule
+from openstack.exceptions import ResourceNotFound
 
 DOCUMENTATION = '''
 ---
@@ -97,25 +96,6 @@ EXAMPLES = '''
 '''
 
 
-def is_path(path):
-    """ Check if it file path"""
-    if os.path.isfile(path):
-        return True
-    return False
-
-
-def read_yaml(path):
-    """
-    Reads yaml file
-
-    :param path: path to file
-    :return: yaml file data as dict
-    """
-    with open(path, 'r') as file:
-        data = yaml.safe_load(file)
-    return json.dumps(data)
-
-
 class SwiftClient(SwiftModule):
     argument_spec = dict(
         container=dict(type='str', required=False),
@@ -124,71 +104,112 @@ class SwiftClient(SwiftModule):
         content=dict(type='str', required=False)
     )
 
-    def present(self, container, object_name=None, content=None):
-        data = []
-        containers = [item['name'] for item in self.client.containers()]
-        if container not in containers:
-            data = self.client.create_container(container)
-            data.pop('location')
+    def present(self, container, object_name=None):
+        """Ensure container and object exist
+
+        If `object_name` is not set, just creates container if missing
+
+        If `content` and `object_name` is set, file upload will be done
+        """
+
+        data = {}
+        changed = False
+
+        try:
+            container_data = self.client.get_container_metadata(container).to_dict()
+        except ResourceNotFound:
+            container_data = self.client.create_container(container).to_dict()
+            changed = True
+        container_data.pop('location')
+        data['container'] = container_data
+
+        content = self.params['content']
         if content and object_name:
-            if is_path(content):
-                content = read_yaml(content)
-            else:
-                content = content.replace("'", "\"")
+            if os.path.isfile(content):
+                with open(content) as file:
+                    content = file.read()
             raw = self.client.create_object(
                 container=container,
                 name=object_name,
                 data=content
             )
-            dt = raw.to_dict()
-            dt.pop('location')
-            data.append(dt)
-        return data
+            object_data = raw.to_dict()
+            object_data.pop('location')
+            object_data['content'] = content
+            data['object'] = object_data
+            changed = True
+
+        self.exit(changed=changed, **data)
+
+    def _container_exist(self, name):
+        try:
+            self.client.get_container_metadata(name)
+            return True
+        except ResourceNotFound:
+            return False
+
+    def _object_exist(self, container, name):
+        try:
+            self.client.get_object_metadata(name, container)
+            return True
+        except ResourceNotFound:
+            return False
 
     def absent(self, container, object_name=None):
-        if object_name:
-            data = self.client.delete_object(
+        """Remove object and its container"""
+
+        if not self._container_exist(container):
+            self.exit(changed=False)
+
+        if object_name and self._object_exist(container, object_name):
+            self.client.delete_object(
                 container=container,
                 obj=object_name
             )
-            return data
-        data = self.client.delete_container(container=container)
-        return data
+
+        self.client.delete_container(container=container)
+        self.exit(changed=True)
 
     def fetch(self, container=None, object_name=None):
-        data = []
+        """Fetches current state
+
+        If container and object name is set, downloads the file
+        returning it in `object.content`
+
+        If only container is set, list all objects of the container
+
+        If neither are set, list all containers in the project
+        """
+
         if container and object_name:
-            data = self.client.download_object(object_name, container)
-            return json.loads(data)
+            content = self.client.download_object(object_name, container)
+            self.exit(changed=False, object=dict(content=content))
+
         if container:
+            objects = []
             for raw in self.client.objects(container):
                 dt = raw.to_dict()
                 dt.pop('location')
-                data.append(dt)
-            return data
+                objects.append(dt)
+            self.exit(changed=False, objects=objects)
+
+        containers = []
         for raw in self.client.containers():
             dt = raw.to_dict()
             dt.pop('location')
-            data.append(dt)
-        return data
+            containers.append(dt)
+        self.exit(changed=False, containers=containers)
 
     def run(self):
-        changed = False
         container = self.params['container']
         object_name = self.params['object_name']
         state = self.params['state']
-        content = self.params['content']
         if state == 'present':
-            data = self.present(container, object_name, content)
-            changed = True
-            self.exit(changed=changed, data=data)
+            self.present(container, object_name)
         if state == 'absent':
-            data = self.absent(container, object_name)
-            changed = True
-            self.exit(changed=changed, data=data)
+            self.absent(container, object_name)
         if state == 'fetch':
-            data = self.fetch(container, object_name)
-            self.exit(changed=changed, data=data)
+            self.fetch(container, object_name)
 
 
 def main():

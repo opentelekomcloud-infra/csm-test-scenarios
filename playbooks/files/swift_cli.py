@@ -9,6 +9,7 @@ import yaml
 from openstack.config import OpenStackConfig
 
 OK_CODES = [200, 201, 202]
+RESPONSE_FORMAT = 'format=json'
 
 
 class SwiftClient:
@@ -20,11 +21,9 @@ class SwiftClient:
         self.cloud = self.os_config.get_one()
 
         self.iam_session = self.cloud.get_session()
-        self.auth_url = self.iam_session.get_endpoint(service_type='identity')
         self.token = self.iam_session.get_token()
         self.session.headers.update({'X-Auth-Token': self.token})
         self.base_url = self.iam_session.get_endpoint(service_type='object-store')
-        self.response_format = 'format=json'
 
     def list_containers(self) -> dict:
         """
@@ -34,7 +33,7 @@ class SwiftClient:
         """
         try:
             response = self.session.get(
-                f'{self.base_url}?{self.response_format}'
+                f'{self.base_url}?{RESPONSE_FORMAT}'
             )
         except ConnectionError as ce:
             raise ce
@@ -50,7 +49,7 @@ class SwiftClient:
         """
         try:
             response = self.session.get(
-                f'{self.base_url}/{container}?{self.response_format}'
+                f'{self.base_url}/{container}?{RESPONSE_FORMAT}'
             )
         except ConnectionError as ce:
             raise ce
@@ -173,33 +172,56 @@ def parse_params():
     return args
 
 
-def run(args, client):
-    if args.state == 'present':
-        containers = [item['name'] for item in client.list_containers()]
-        if args.container not in containers:
-            result = client.create_container(container=args.container)
-            return print(result)
-        if args.content and args.object_name:
-            if is_path(args.content):
-                args.content = read_yaml(args.content)
-                result = client.create_object(
-                    container=args.container,
-                    object_name=args.object_name,
-                    body=args.content
-                )
-                return print(result)
-        return print('No content or object_name', file=sys.stderr)
+def present(args, client):
+    """
+    Creates swift container or object in container
 
-    if args.state == 'absent':
-        if args.object_name:
-            result = client.delete_object(
+    :param args: container and object_name, content
+    :param client: Swift client
+    :return:
+    """
+    containers = [item['name'] for item in client.list_containers()]
+    if args.container not in containers:
+        result = client.create_container(container=args.container)
+        return print(result)
+    if args.content and args.object_name:
+        if is_path(args.content):
+            args.content = read_yaml(args.content)
+            result = client.create_object(
                 container=args.container,
-                object_name=args.object_name
+                object_name=args.object_name,
+                body=args.content
             )
             return print(result)
-        result = client.delete_container(container=args.container)
-        return print(result)
+    return print('No content or object_name', file=sys.stderr)
 
+
+def absent(args, client):
+    """
+    Deletes container or object from swift
+
+    :param args: container and object_name
+    :param client: Swift client
+    :return:
+    """
+    if args.object_name:
+        result = client.delete_object(
+            container=args.container,
+            object_name=args.object_name
+        )
+        return print(result)
+    result = client.delete_container(container=args.container)
+    return print(result)
+
+
+def fetch(args, client):
+    """
+    Fetches items from swift
+
+    :param args: container and object_name
+    :param client: Swift client
+    :return: returns swift objects
+    """
     if args.state == 'fetch':
         if args.object_name:
             result = client.object_content(
@@ -214,7 +236,12 @@ def run(args, client):
 def main():
     args = parse_params()
     client = SwiftClient()
-    return run(args, client)
+    if args.state == 'present':
+        return present(args, client)
+    if args.state == 'absent':
+        return absent(args, client)
+    if args.state == 'fetch':
+        return fetch(args, client)
 
 
 if __name__ == '__main__':

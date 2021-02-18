@@ -8,7 +8,6 @@ import requests
 import yaml
 from openstack.config import OpenStackConfig
 
-SWIFT_ENDPOINT = 'https://swift.eu-de.otc.t-systems.com'
 OK_CODES = [200, 201, 202]
 
 
@@ -23,9 +22,8 @@ class SwiftClient:
         self.iam_session = self.cloud.get_session()
         self.auth_url = self.iam_session.get_endpoint(service_type='identity')
         self.token = self.iam_session.get_token()
-        self.project_id = self.iam_session.get_project_id()
         self.session.headers.update({'X-Auth-Token': self.token})
-        self.base_url = f'{SWIFT_ENDPOINT}/v1/AUTH_{self.project_id}'
+        self.base_url = self.iam_session.get_endpoint(service_type='object-store')
         self.response_format = 'format=json'
 
     def list_containers(self) -> dict:

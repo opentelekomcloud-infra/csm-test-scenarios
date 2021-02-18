@@ -2,18 +2,16 @@
 - name: Gather metrics
   hosts: localhost
   tasks:
-    - name: Get inventory from swift
-      script: >
-        swift_cli.py
-        --state "{{ swift_operation }}"
-        --container "{{ swift_container }}"
-        --object_name "{{ swift_object }}"
+    - name: Swift cntr object
+      swift_client:
+        state: "{{ swift_operation }}"
+        container: "{{ swift_container }}"
+        object_name: "{{ swift_object }}"
       register: result
 
     - name: facts
       set_fact:
-        elb_address: "{{ (result.stdout | from_json).lb_monitoring.lb_fip }}"
-      register: result
+        elb_address: "{{ result.object.lb_monitoring.lb_fip }}"
 
     - name: Get metrics from loadbalancer
       lb_load_monitoring:

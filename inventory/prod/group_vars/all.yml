@@ -4,3 +4,6 @@ scenario_name: csm_controller
 key_path: /tmp/data
 cloud_name: "{{ lookup('env', 'OS_CLOUD') }}"
 cloud_config: /tmp
+swift_operation: fetch
+swift_container: csm
+swift_object: lb_monitoring_inventory

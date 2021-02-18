@@ -5,9 +5,9 @@
     - name: Get inventory from swift
       script: >
         swift_cli.py
-        --state fetch
-        --container csm
-        --object_name lb_monitoring_inventory
+        --state "{{ swift_operation }}"
+        --container "{{ swift_container }}"
+        --object_name "{{ swift_object }}"
       register: result
 
     - name: facts

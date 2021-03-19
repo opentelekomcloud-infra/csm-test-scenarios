@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import re
 from time import sleep
 
 import requests
@@ -95,12 +95,6 @@ EXAMPLES = '''
 LB_TIMING = 'csm_lb_timings'
 LB_TIMEOUT = 'csm_lb_timeout'
 
-INSTANCES_AZ = {
-    'lb-monitoring-instance0-prod': 'eu-de-01',
-    'lb-monitoring-instance1-prod': 'eu-de-02',
-    'lb-monitoring-instance2-prod': 'eu-de-03',
-}
-
 
 class LbLoadMonitoring(MessageModule):
     argument_spec = dict(
@@ -130,8 +124,8 @@ class LbLoadMonitoring(MessageModule):
                     name=LB_TIMING,
                     value=int(res.elapsed.microseconds / 1000),
                     metric_type='ms',
-                    az=INSTANCES_AZ.get(res.headers['Server']))
-                )
+                    az=re.search(r'eu-de-\d+', res.headers['Server']).group()
+                ))
             sleep(1)
         if self.params['socket']:
             for metric in metrics:

@@ -1,6 +1,8 @@
 ---
 - name: Gather metrics
   hosts: localhost
+  environment:
+    OS_CLOUD: csm
   tasks:
     - name: Swift get object
       swift_client:

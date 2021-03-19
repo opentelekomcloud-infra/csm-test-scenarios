@@ -8,7 +8,7 @@
       swift_client:
         state: "{{ swift_operation }}"
         container: "{{ swift_container }}"
-        object_name: "{{ swift_object }}"
+        object_name: lb_monitoring
       register: result
 
     - name: facts

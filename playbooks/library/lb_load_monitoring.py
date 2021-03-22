@@ -100,6 +100,7 @@ EXAMPLES = '''
 SUCCESS_METRIC = 'csm_lb_timings'
 TIMEOUT_METRIC = 'csm_lb_timeout'
 
+
 class LbLoadMonitoring(MessageModule):
     argument_spec = dict(
         target_address=dict(type='str', required=True),

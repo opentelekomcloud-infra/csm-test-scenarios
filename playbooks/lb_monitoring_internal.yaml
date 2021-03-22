@@ -13,9 +13,9 @@
 
     - name: facts
       set_fact:
-        elb_address: "{{ (result.object.content | from_yaml).loadbalancer_public_ip }}"
+        elb_address: "{{ (result.object.content | from_yaml).loadbalancer_private_ip }}"
 
     - name: Get metrics from loadbalancer
       lb_load_monitoring:
         target_address: "{{ elb_address }}"
-        type: public
+        type: internal

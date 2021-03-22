@@ -42,6 +42,11 @@ options:
     description: Count of requests.
     type: int
     default: 30
+  type:
+    description: Public or internal address.
+    type: str
+    default: public
+    choices=['public', 'internal']
 requirements: []
 '''
 
@@ -92,20 +97,21 @@ EXAMPLES = '''
   register: out
 '''
 
-LB_TIMING = 'csm_lb_timings'
-LB_TIMEOUT = 'csm_lb_timeout'
-
+SUCCESS_METRIC = 'csm_lb_timings'
+TIMEOUT_METRIC = 'csm_lb_timeout'
 
 class LbLoadMonitoring(MessageModule):
     argument_spec = dict(
         target_address=dict(type='str', required=True),
         timeout=dict(type='int', default=20),
         protocol=dict(type='str', default='http'),
-        request_count=dict(type='int', default=30)
+        request_count=dict(type='int', default=30),
+        type=dict(type='str', default='public', choices=['public', 'internal'])
     )
 
     def run(self):
         timeout = self.params['timeout']
+        type = self.params['type']
         address = f"{self.params['protocol']}://{self.params['target_address']}"
         metrics = []
         for _ in range(self.params['request_count']):
@@ -114,14 +120,14 @@ class LbLoadMonitoring(MessageModule):
             except requests.Timeout:
                 self.log('timeout sending request to LB')
                 metrics.append(self.create_metric(
-                    name=LB_TIMEOUT,
+                    name=f'{TIMEOUT_METRIC}.{type}',
                     value=timeout * 1000,
                     metric_type='ms',
                     az='default')
                 )
             else:
                 metrics.append(self.create_metric(
-                    name=LB_TIMING,
+                    name=f'{SUCCESS_METRIC}.{type}',
                     value=int(res.elapsed.microseconds / 1000),
                     metric_type='ms',
                     az=re.search(r'eu-de-\d+', res.headers['Server']).group()

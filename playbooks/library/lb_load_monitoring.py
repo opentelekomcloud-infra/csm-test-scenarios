@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
-from time import sleep
 
 import requests
 from ansible.module_utils.message import MessageModule
@@ -127,12 +126,15 @@ class LbLoadMonitoring(MessageModule):
         timeout = self.params['timeout']
         interface = self.params['interface']
         listener_type = self.params['listener_type']
-        address = f"{self.params['protocol']}://{self.params['target_address']}:{self.params['protocol_port']}"
+        address = f"{self.params['protocol']}://{self.params['target_address']}" \
+                  f":{self.params['protocol_port']}"
         if self.params['protocol'] == 'https':
             verify = False
         for _ in range(self.params['request_count']):
             try:
-                res = requests.get(address, headers={'Connection': 'close'}, verify=verify, timeout=timeout)
+                res = requests.get(
+                    address, headers={'Connection': 'close'}, verify=verify, timeout=timeout
+                )
             except requests.Timeout:
                 self.log('timeout sending request to LB')
                 metrics.append(self.create_metric(

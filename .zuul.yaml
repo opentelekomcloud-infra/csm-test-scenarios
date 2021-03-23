@@ -4,8 +4,7 @@
     check:
       jobs:
         - otc-tox-pep8
-        - otc-tox-linters-ansible-2.9
-        - otc-tox-linters-ansible-2.10
+        - otc-tox-linters
     gate:
       jobs:
         - otc-tox-pep8

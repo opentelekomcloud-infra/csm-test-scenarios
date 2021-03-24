@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
-from time import sleep
 
 import requests
 from ansible.module_utils.message import MessageModule
@@ -38,10 +37,24 @@ options:
     description: Load balancer protocol.
     type: str
     default: http
+  protocol_port:
+    description: Load balancer listener port.
+    type: int
+    default: 80
   request_count:
     description: Count of requests.
     type: int
     default: 30
+  interface:
+    description: Public or internal address.
+    type: str
+    default: public
+    choices=['public', 'internal']
+  listener_type:
+    description: Type of the listener to be checked.
+    type: str
+    default: http
+    choices=['http', 'https', 'tcp']
 requirements: []
 '''
 
@@ -92,8 +105,8 @@ EXAMPLES = '''
   register: out
 '''
 
-LB_TIMING = 'csm_lb_timings'
-LB_TIMEOUT = 'csm_lb_timeout'
+SUCCESS_METRIC = 'csm_lb_timings'
+TIMEOUT_METRIC = 'csm_lb_timeout'
 
 
 class LbLoadMonitoring(MessageModule):
@@ -101,32 +114,42 @@ class LbLoadMonitoring(MessageModule):
         target_address=dict(type='str', required=True),
         timeout=dict(type='int', default=20),
         protocol=dict(type='str', default='http'),
-        request_count=dict(type='int', default=30)
+        request_count=dict(type='int', default=30),
+        protocol_port=dict(type='int', default=80),
+        interface=dict(type='str', default='public', choices=['public', 'internal']),
+        listener_type=dict(type='str', default='http', choices=['http', 'https', 'tcp'])
     )
 
     def run(self):
-        timeout = self.params['timeout']
-        address = f"{self.params['protocol']}://{self.params['target_address']}"
         metrics = []
+        verify = True
+        timeout = self.params['timeout']
+        interface = self.params['interface']
+        listener_type = self.params['listener_type']
+        address = f"{self.params['protocol']}://{self.params['target_address']}" \
+                  f":{self.params['protocol_port']}"
+        if self.params['protocol'] == 'https':
+            verify = False
         for _ in range(self.params['request_count']):
             try:
-                res = requests.get(address, headers={'Connection': 'close'}, timeout=timeout)
+                res = requests.get(
+                    address, headers={'Connection': 'close'}, verify=verify, timeout=timeout
+                )
             except requests.Timeout:
                 self.log('timeout sending request to LB')
                 metrics.append(self.create_metric(
-                    name=LB_TIMEOUT,
+                    name=f'{TIMEOUT_METRIC}.{interface}.{listener_type}',
                     value=timeout * 1000,
                     metric_type='ms',
                     az='default')
                 )
             else:
                 metrics.append(self.create_metric(
-                    name=LB_TIMING,
+                    name=f'{SUCCESS_METRIC}.{interface}.{listener_type}',
                     value=int(res.elapsed.microseconds / 1000),
                     metric_type='ms',
-                    az=re.search(r'eu-de-\d+', res.headers['Server']).group()
+                    az=re.search(r'eu-de-\d+', res.headers['Backend-Server']).group()
                 ))
-            sleep(1)
         if self.params['socket']:
             for metric in metrics:
                 self.push_metric(metric, self.params['socket'])

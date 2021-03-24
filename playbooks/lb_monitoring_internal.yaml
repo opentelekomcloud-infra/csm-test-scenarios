@@ -13,14 +13,14 @@
 
     - name: facts
       set_fact:
-        elb_address: "{{ (result.object.content | from_yaml).loadbalancer_public_ip }}"
+        elb_address: "{{ (result.object.content | from_yaml).loadbalancer_private_ip }}"
 
     - name: Get metrics from loadbalancer (http listener)
       lb_load_monitoring:
         target_address: "{{ elb_address }}"
         protocol: http
         protocol_port: 80
-        interface: public
+        interface: internal
         listener_type: http
 
     - name: Get metrics from loadbalancer (https listener)
@@ -28,7 +28,7 @@
         target_address: "{{ elb_address }}"
         protocol: https
         protocol_port: 443
-        interface: public
+        interface: internal
         listener_type: https
 
     - name: Get metrics from loadbalancer (tcp listener)
@@ -36,5 +36,5 @@
         target_address: "{{ elb_address }}"
         protocol: http
         protocol_port: 3333
-        interface: public
+        interface: internal
         listener_type: tcp

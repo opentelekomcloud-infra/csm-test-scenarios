@@ -146,7 +146,7 @@ class LbLoadMonitoring(MessageModule):
             else:
                 metrics.append(self.create_metric(
                     name=f'{SUCCESS_METRIC}.{interface}.{listener_type}',
-                    value=int(res.elapsed.microseconds / 1000),
+                    value=int(res.elapsed.total_seconds() * 1000),
                     metric_type='ms',
                     az=re.search(r'eu-de-\d+', res.headers['Backend-Server']).group()
                 ))

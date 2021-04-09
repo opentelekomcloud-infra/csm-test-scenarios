@@ -180,7 +180,6 @@ class SwiftClient(SwiftModule):
 
         If neither are set, list all containers in the project
         """
-
         if container and object_name:
             content = self.client.download_object(object_name, container)
             self.exit(changed=False, object=dict(content=content))

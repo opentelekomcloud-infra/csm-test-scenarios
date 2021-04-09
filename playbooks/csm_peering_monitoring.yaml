@@ -1,9 +1,39 @@
 ---
 - name: Prepare key and variables for scenario
   hosts: localhost
+#  environment:
+#    OS_CLOUD: "{{ lookup('env', 'CSM_CLOUD') | default('csm', True) }}"
+  vars:
+    key_path: /tmp/data
+    key_name: infra-key
   tasks:
+    - name: Swift get object
+      swift_client:
+        state: "{{ swift_operation }}"
+        container: "{{ swift_container }}"
+        object_name: lb_monitoring
+      register: result
+
+    - name: facts
+      set_fact:
+        vpc_b_watcher_eip: "{{ (result.object.content | from_yaml).watcher_eu-de-01-vpc-b }}"
+
     - name: Obtain key for connection
       script: >
         obs_cli.py
-        --output /tmp/data
-        --key infra-key
+        --output "{{ key_path }}"
+        --key "{{ key_name }}"
+
+    - name: Register VPC_B watcher
+      add_host:
+        name: vpc_b_watcher
+        ansible_ssh_common_args: >
+          -o UserKnownHostsFile=/dev/null
+          -o StrictHostKeyChecking=no
+          -o IdentityFile="{{ key_path }}/{{ key_name }}"
+          -o User=linux
+          -o PasswordAuthentication=no
+          -o StrictHostKeyChecking=no
+          -o ProxyCommand='ssh -W %h:%p
+          -q linux@{{ vpc_b_eip }}
+          -i {{ key_path }}/{{ key_name }}'

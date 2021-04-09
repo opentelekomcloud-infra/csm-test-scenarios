@@ -15,12 +15,12 @@
       swift_client:
         state: "{{ swift_operation }}"
         container: "{{ swift_container }}"
-        object_name: lb_monitoring
+        object_name: infra_eips
       register: result
 
     - name: facts
       set_fact:
-        vpc_b_watcher_eip: "{{ (result.object.content | from_yaml).watcher_eu-de-01-vpc-b }}"
+        watchers_eips: "{{ (result.object.content | from_yaml).watchers_eips | replace('-','_') }}"
 
     - name: Register VPC_B watcher
       add_host:
@@ -33,5 +33,5 @@
           -o PasswordAuthentication=no
           -o StrictHostKeyChecking=no
           -o ProxyCommand='ssh -W %h:%p
-          -q linux@{{ vpc_b_eip }}
+          -q linux@{{ watchers_eips.watcher_eu_de_01_vpc_b }}
           -i {{ key_path }}/{{ key_name }}'

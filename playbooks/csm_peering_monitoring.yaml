@@ -1,12 +1,16 @@
 ---
 - name: Prepare key and variables for scenario
   hosts: localhost
-#  environment:
-#    OS_CLOUD: "{{ lookup('env', 'CSM_CLOUD') | default('csm', True) }}"
   vars:
     key_path: /tmp/data
     key_name: infra-key
   tasks:
+    - name: Obtain key for connection
+      script: >
+        obs_cli.py
+        --output "{{ key_path }}"
+        --key "{{ key_name }}"
+
     - name: Swift get object
       swift_client:
         state: "{{ swift_operation }}"
@@ -17,12 +21,6 @@
     - name: facts
       set_fact:
         vpc_b_watcher_eip: "{{ (result.object.content | from_yaml).watcher_eu-de-01-vpc-b }}"
-
-    - name: Obtain key for connection
-      script: >
-        obs_cli.py
-        --output "{{ key_path }}"
-        --key "{{ key_name }}"
 
     - name: Register VPC_B watcher
       add_host:

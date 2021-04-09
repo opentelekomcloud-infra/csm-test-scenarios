@@ -20,9 +20,9 @@ RW_OWNER = 0o600
 def parse_params():
     parser = ArgumentParser(description='Synchronize used private key with OBS')
     parser.add_argument('--key_name', '-k', required=True, default='key_csm_controller')
-    parser.add_argument('--scenario_name', '-s', nargs='+', required=True,
-                        default=['csm_controller'])
-    parser.add_argument('--terraform_workspace', '-w', required=True, default='test')
+    parser.add_argument('--scenario_name', '-s', nargs='+', required=False,
+                        default=[])
+    parser.add_argument('--terraform_workspace', '-w', required=False, default='test')
     parser.add_argument('--output', '-o', required=True, default='/tmp/data')
     args = parser.parse_args()
     return args

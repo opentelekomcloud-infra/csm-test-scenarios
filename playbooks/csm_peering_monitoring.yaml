@@ -1,0 +1,9 @@
+---
+- name: Prepare key and variables for scenario
+  hosts: localhost
+  tasks:
+    - name: Obtain key for connection
+      script: >
+        obs_cli.py
+        --output /tmp/data
+        --key infra-key

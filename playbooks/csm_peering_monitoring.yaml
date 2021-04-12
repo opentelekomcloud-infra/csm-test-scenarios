@@ -18,7 +18,7 @@
       copy:
         content: "{{ key.object.content }}"
         dest: "{{ key_path }}/csm_key"
-        mode: 0700
+        mode: 0600
 
     - name: Swift get object
       swift_client:
@@ -58,9 +58,12 @@
   vars:
     grp_host: '192.168.14.159'
     grp_port: 2014
+    metric_name: csm_peering_ping
   tasks:
     - name: Measure latency
-      script: "peering_ping.py {{ item.host }} {{ item.name }} 5 {{ grp_host }} {{ grp_port }}"
+      script: >
+        ping.py "{{ metric_name }}" "{{ item.host }}" "{{ item.name }}"
+        5 "{{ grp_host }}" "{{ grp_port }}"
       args:
         executable: "/usr/bin/python3"
       loop: "{{ hostvars.localhost.nodes }}"

@@ -25,11 +25,11 @@
         state: "{{ swift_operation }}"
         container: "{{ swift_container }}"
         object_name: infra_eips
-      register: watchers
+      register: wtcr
 
     - name: facts
       set_fact:
-        watchers_eips: "{{ (watchers.object.content | from_yaml).watchers_eips | replace('-','_') }}"
+        watchers_eips: "{{ (wtcr.object.content | from_yaml).watchers_eips | replace('-','_') }}"
 
     - name: Register VPC_B watcher
       add_host:
@@ -42,15 +42,15 @@
     - name: Nodes List
       set_fact:
         nodes: [
-          { host: 192.168.200.10, name: instance_1_eu-de-01 },
-          { host: 192.168.200.11, name: instance_2_eu-de-01 },
-          { host: 192.168.200.12, name: instance_3_eu-de-01 },
-          { host: 192.168.200.13, name: instance_1_eu-de-02 },
-          { host: 192.168.200.14, name: instance_2_eu-de-02 },
-          { host: 192.168.200.15, name: instance_3_eu-de-02 },
-          { host: 192.168.200.16, name: instance_1_eu-de-03 },
-          { host: 192.168.200.17, name: instance_2_eu-de-03 },
-          { host: 192.168.200.18, name: instance_3_eu-de-03 }
+          {host: 192.168.200.10, name: instance_1_eu-de-01},
+          {host: 192.168.200.11, name: instance_2_eu-de-01},
+          {host: 192.168.200.12, name: instance_3_eu-de-01},
+          {host: 192.168.200.13, name: instance_1_eu-de-02},
+          {host: 192.168.200.14, name: instance_2_eu-de-02},
+          {host: 192.168.200.15, name: instance_3_eu-de-02},
+          {host: 192.168.200.16, name: instance_1_eu-de-03},
+          {host: 192.168.200.17, name: instance_2_eu-de-03},
+          {host: 192.168.200.18, name: instance_3_eu-de-03}
           ]
 
 - name: Ping hosts
@@ -62,8 +62,8 @@
   tasks:
     - name: Measure latency
       script: >
-        ping.py "{{ metric_name }}" "{{ item.host }}" "{{ item.name }}"
-        5 "{{ grp_host }}" "{{ grp_port }}"
+        ping.py "{{ metric_name }}" "{{ item.host }}"
+        "{{ item.name }}" "{{ grp_host }}" "{{ grp_port }}"
       args:
         executable: "/usr/bin/python3"
       loop: "{{ hostvars.localhost.nodes }}"

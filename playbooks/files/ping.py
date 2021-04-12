@@ -24,14 +24,10 @@ def emit_metric(host, port, metric):
 def main():
     host = sys.argv[2]
     metric_name = f'{sys.argv[1]}.{sys.argv[3]}'
-    if len(sys.argv) == 5:
-        request_timeout = int(sys.argv[4])
-    else:
-        request_timeout = 5
-    graphite_host = sys.argv[5]
-    graphite_port = sys.argv[6]
-    if len(sys.argv) == 8:
-        packet_size = sys.argv[7]
+    graphite_host = sys.argv[4]
+    graphite_port = sys.argv[5]
+    if len(sys.argv) == 7:
+        packet_size = sys.argv[6]
     else:
         packet_size = '56'
     duration = -1

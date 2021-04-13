@@ -1,0 +1,83 @@
+---
+- name: Prepare key and variables for scenario
+  hosts: localhost
+  environment:
+    OS_CLOUD: "{{ lookup('env', 'CSM_CLOUD') | default('csm', True) }}"
+  vars:
+    key_path: /tmp/data
+    key_name: infra-key
+  tasks:
+    - name: Obtain key for connection
+      swift_client:
+        state: "{{ swift_operation }}"
+        container: "{{ swift_container }}"
+        object_name: machine_key
+      register: key
+
+    - name: Save key for connection
+      copy:
+        content: "{{ key.object.content }}"
+        dest: "{{ key_path }}/csm_key"
+        mode: 0600
+
+    - name: Swift get object
+      swift_client:
+        state: "{{ swift_operation }}"
+        container: "{{ swift_container }}"
+        object_name: infra_eips
+      register: wtcr
+
+    - name: facts
+      set_fact:
+        watchers_eips: "{{ (wtcr.object.content | from_yaml).watchers_eips | replace('-','_') }}"
+
+    - name: Register VPC_A watcher
+      add_host:
+        name: vpc_a_watcher
+        groups: watchers
+        ansible_host: "{{ watchers_eips.watcher_eu_de_01 }}"
+        ansible_ssh_user: linux
+        ansible_ssh_private_key_file: "{{ key_path }}/csm_key"
+
+    - name: Nodes List
+      set_fact:
+        nodes: [
+          {host: 192.168.200.10, name: instance_1_eu-de-01},
+          {host: 192.168.200.11, name: instance_2_eu-de-01},
+          {host: 192.168.200.12, name: instance_3_eu-de-01},
+          {host: 192.168.200.13, name: instance_1_eu-de-02},
+          {host: 192.168.200.14, name: instance_2_eu-de-02},
+          {host: 192.168.200.15, name: instance_3_eu-de-02},
+          {host: 192.168.200.16, name: instance_1_eu-de-03},
+          {host: 192.168.200.17, name: instance_2_eu-de-03},
+          {host: 192.168.200.18, name: instance_3_eu-de-03}]
+
+- name: Ping hosts, standart packets
+  hosts: vpc_a_watcher
+  vars:
+    grp_host: '192.168.14.159'
+    grp_port: 2014
+    metric_name: csm_vpc_ping
+  tasks:
+    - name: Measure latency
+      script: >
+        ping.py "{{ metric_name }}" "{{ item.host }}"
+        "{{ item.name }}" "{{ grp_host }}" "{{ grp_port }}"
+      args:
+        executable: "/usr/bin/python3"
+      loop: "{{ hostvars.localhost.nodes }}"
+
+- name: Ping hosts, large packets 1500
+  hosts: vpc_a_watcher
+  vars:
+    grp_host: '192.168.14.159'
+    grp_port: 2014
+    metric_name: csm_vpc_ping
+  tasks:
+    - name: Measure latency
+      script: >
+        ping.py "{{ metric_name }}" "{{ item.host }}"
+        "{{ item.name }}" "{{ grp_host }}" "{{ grp_port }}" 1492
+      args:
+        executable: "/usr/bin/python3"
+      loop: "{{ hostvars.localhost.nodes }}"

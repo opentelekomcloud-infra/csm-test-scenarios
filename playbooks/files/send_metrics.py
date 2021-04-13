@@ -7,7 +7,6 @@ import sys
 
 
 def emit_metric(socket_name, serialized_metric):
-    print(serialized_metric, file=sys.stdout)
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as _socket:
         _socket.connect(socket_name)
         msg = f'{serialized_metric}\n'

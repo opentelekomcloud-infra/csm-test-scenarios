@@ -20,14 +20,14 @@
         dest: "{{ key_path }}/csm_key"
         mode: 0600
 
-    - name: Swift get object
+    - name: Get watchers
       swift_client:
         state: "{{ swift_operation }}"
         container: "{{ swift_container }}"
         object_name: infra_eips
       register: wtcr
 
-    - name: facts
+    - name: Register watchers ips
       set_fact:
         watchers_eips: "{{ (wtcr.object.content | from_yaml).watchers_eips | replace('-','_') }}"
 

@@ -20,8 +20,10 @@ def main():
     arg_p.add_argument('--hosts', default=[])
     arg_p.add_argument('--packet_size', default='56')
     args = arg_p.parse_args()
+
     rc = 0
     metrics = []
+
     hosts = json.loads(args.hosts.replace("\'", "\""))
     for host in hosts:
         metric_name = f'{args.metric_name}.{host["name"]}'

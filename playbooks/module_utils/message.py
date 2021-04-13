@@ -60,7 +60,7 @@ class MessageModule:
             msg {str} -- Debug message.
         """
         if self.ansible._debug or self.ansible._verbosity > 2:
-            self.ansible.log(f'[DEBUG] {msg}')
+            self.ansible.log(msg)
 
     @abc.abstractmethod
     def run(self):

@@ -20,4 +20,5 @@ def main():
         emit_metric(socket, metric)
 
 
-main()
+if __name__ == '__main__':
+    main()

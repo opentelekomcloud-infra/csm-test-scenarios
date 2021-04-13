@@ -67,7 +67,6 @@
         executable: "/usr/bin/python3"
       loop: "{{ hostvars.localhost.nodes }}"
 
-
 - name: Ping hosts, large packets 1500
   hosts: vpc_b_watcher
   vars:

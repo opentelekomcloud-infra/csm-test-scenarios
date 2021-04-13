@@ -50,8 +50,7 @@
           {host: 192.168.200.15, name: instance_3_eu-de-02},
           {host: 192.168.200.16, name: instance_1_eu-de-03},
           {host: 192.168.200.17, name: instance_2_eu-de-03},
-          {host: 192.168.200.18, name: instance_3_eu-de-03}
-          ]
+          {host: 192.168.200.18, name: instance_3_eu-de-03}]
 
 - name: Ping hosts
   hosts: vpc_b_watcher

@@ -2,9 +2,9 @@
 
 import json
 import re
-import socket
 import subprocess as sp
 import sys
+from argparse import ArgumentParser
 
 
 def serialize_metric(msg):
@@ -14,48 +14,45 @@ def serialize_metric(msg):
         return err.msg
 
 
-def emit_metric(host, port, metric):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _socket:
-        _socket.connect((host, int(port)))
-        msg = f'{serialize_metric(metric)}\n'
-        _socket.sendall(msg.encode('utf8'))
-
-
 def main():
-    host = sys.argv[2]
-    metric_name = f'{sys.argv[1]}.{sys.argv[3]}'
-    graphite_host = sys.argv[4]
-    graphite_port = sys.argv[5]
-    if len(sys.argv) == 7:
-        packet_size = sys.argv[6]
-    else:
-        packet_size = '56'
-    duration = -1
-    try:
-        rsp = sp.check_output(
-            ['ping', '-c', '1', '-s', packet_size, host],
-            stderr=sp.STDOUT,
-            universal_newlines=True
-        )
-        duration = re.search(r'time=(\d+)', rsp).group(1)
-        metric_name = f'{metric_name}.success'
-        metric = dict(
-            name=metric_name,
-            value=duration,
-            metric_type='ms',
-            __type='metric'
-        )
-        rc = 0
-    except AttributeError as ae:
-        metric = dict(
-            name=f'{metric_name}.failed',
-            metric_type='c',
-            __type='metric'
-        )
-        rc = 3
-        print(f'{host} caused {ae} by invalid response')
+    arg_p = ArgumentParser(prog='Ping module', description='Script for pinging selected hosts')
+    arg_p.add_argument('--metric_name', default='csm_test_metric')
+    arg_p.add_argument('--hosts', default=[])
+    arg_p.add_argument('--packet_size', default='56')
+    args = arg_p.parse_args()
+    rc = 0
+    metrics = []
+    hosts = json.loads(args.hosts.replace("\'", "\""))
+    for host in hosts:
+        metric_name = f'{args.metric_name}.{host["name"]}'
+        duration = -1
+        try:
+            rsp = sp.check_output(
+                ['ping', '-c', '1', '-s', args.packet_size, host["ip"]],
+                stderr=sp.STDOUT,
+                universal_newlines=True
+            )
+            duration = re.search(r'time=(\d+)', rsp).group(1)
+            metric_name = f'{metric_name}.success'
+            metric = dict(
+                name=metric_name,
+                value=duration,
+                metric_type='ms',
+                __type='metric'
+            )
+            rc = 0
+        except AttributeError as ae:
+            metric = dict(
+                name=f'{metric_name}.failed',
+                metric_type='c',
+                __type='metric'
+            )
+            rc = 3
+            print(f'{host["name"]} caused {ae} by invalid response')
 
-    emit_metric(graphite_host, graphite_port, metric)
+        serialied_metric = serialize_metric(metric)
+        metrics.append(serialied_metric)
+    print(metrics, file=sys.stdout)
     exit(rc)
 
 

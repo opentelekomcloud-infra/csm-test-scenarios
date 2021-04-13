@@ -52,7 +52,7 @@
           {host: 192.168.200.17, name: instance_2_eu-de-03},
           {host: 192.168.200.18, name: instance_3_eu-de-03}]
 
-- name: Ping hosts, standart packets
+- name: Ping hosts, normal packets
   hosts: vpc_a_watcher
   vars:
     grp_host: '192.168.14.159'

@@ -3,9 +3,6 @@
   hosts: localhost
   environment:
     OS_CLOUD: "{{ lookup('env', 'CSM_CLOUD') | default('csm', True) }}"
-  vars:
-    key_path: /tmp/data
-    key_name: infra-key
   tasks:
     - name: Obtain key for connection
       swift_client:

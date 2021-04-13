@@ -1,4 +1,3 @@
-key_name: key_csm_controller
 terraform_workspace: temp
 scenario_name: csm_controller
 key_path: /tmp/data
@@ -7,3 +6,4 @@ cloud_config: /tmp
 swift_operation: fetch
 swift_container: csm
 swift_object: lb_monitoring_inventory
+key_name: infra-key

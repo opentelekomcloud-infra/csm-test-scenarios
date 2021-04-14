@@ -3,9 +3,6 @@
   hosts: localhost
   environment:
     OS_CLOUD: "{{ lookup('env', 'CSM_CLOUD') | default('csm', True) }}"
-  vars:
-    key_path: /tmp/data
-    key_name: infra-key
   tasks:
     - name: Obtain key for connection
       swift_client:
@@ -20,14 +17,14 @@
         dest: "{{ key_path }}/csm_key"
         mode: 0600
 
-    - name: Swift get object
+    - name: Get watchers
       swift_client:
         state: "{{ swift_operation }}"
         container: "{{ swift_container }}"
         object_name: infra_eips
       register: wtcr
 
-    - name: facts
+    - name: Register watchers ips
       set_fact:
         watchers_eips: "{{ (wtcr.object.content | from_yaml).watchers_eips | replace('-','_') }}"
 
@@ -42,27 +39,65 @@
     - name: Nodes List
       set_fact:
         nodes: [
-          {host: 192.168.200.10, name: instance_1_eu-de-01},
-          {host: 192.168.200.11, name: instance_2_eu-de-01},
-          {host: 192.168.200.12, name: instance_3_eu-de-01},
-          {host: 192.168.200.13, name: instance_1_eu-de-02},
-          {host: 192.168.200.14, name: instance_2_eu-de-02},
-          {host: 192.168.200.15, name: instance_3_eu-de-02},
-          {host: 192.168.200.16, name: instance_1_eu-de-03},
-          {host: 192.168.200.17, name: instance_2_eu-de-03},
-          {host: 192.168.200.18, name: instance_3_eu-de-03}]
+          {ip: 192.168.200.10, name: instance_1_eu-de-01},
+          {ip: 192.168.200.11, name: instance_2_eu-de-01},
+          {ip: 192.168.200.12, name: instance_3_eu-de-01},
+          {ip: 192.168.200.13, name: instance_1_eu-de-02},
+          {ip: 192.168.200.14, name: instance_2_eu-de-02},
+          {ip: 192.168.200.15, name: instance_3_eu-de-02},
+          {ip: 192.168.200.16, name: instance_1_eu-de-03},
+          {ip: 192.168.200.17, name: instance_2_eu-de-03},
+          {ip: 192.168.200.18, name: instance_3_eu-de-03}]
 
-- name: Ping hosts
+- name: Ping hosts, normal packets
   hosts: vpc_b_watcher
   vars:
-    grp_host: '192.168.14.159'
-    grp_port: 2014
-    metric_name: csm_peering_ping
+    metric_name: csm_peering_ping.64
   tasks:
     - name: Measure latency
       script: >
-        ping.py "{{ metric_name }}" "{{ item.host }}"
-        "{{ item.name }}" "{{ grp_host }}" "{{ grp_port }}"
+        ping.py --metric_name "{{ metric_name }}"
+        --hosts "{{ hostvars.localhost.nodes }}"
       args:
         executable: "/usr/bin/python3"
-      loop: "{{ hostvars.localhost.nodes }}"
+      register: serialized_metrics
+
+    - name: Register metrics
+      set_fact:
+        metrics: "{{ serialized_metrics.stdout }}"
+
+- name: Send metrics to graphite
+  hosts: localhost
+  tasks:
+    - name: Send metrics
+      script: >
+        send_metrics.py "{{ hostvars.vpc_b_watcher.metrics }}"
+      args:
+        executable: "/usr/bin/python3"
+
+- name: Ping hosts, large packets 1500
+  hosts: vpc_b_watcher
+  vars:
+    metric_name: csm_peering_ping.1500
+  tasks:
+    - name: Measure latency
+      script: >
+        ping.py --metric_name "{{ metric_name }}"
+        --hosts "{{ hostvars.localhost.nodes }}"
+        --packet_size 1492
+      args:
+        executable: "/usr/bin/python3"
+      register: large_serialized_metrics
+
+    - name: Register metrics
+      set_fact:
+        large_metrics: "{{ large_serialized_metrics.stdout }}"
+
+- name: Send metrics to graphite
+  hosts: localhost
+  tasks:
+    - name: Send metrics
+      script: >
+        send_metrics.py "{{ hostvars.vpc_b_watcher.large_metrics }}"
+      args:
+        executable: "/usr/bin/python3"

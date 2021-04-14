@@ -36,19 +36,6 @@
         ansible_ssh_user: linux
         ansible_ssh_private_key_file: "{{ key_path }}/csm_key"
 
-    - name: Nodes List
-      set_fact:
-        nodes: [
-          {ip: 192.168.200.10, name: instance_1_eu-de-01},
-          {ip: 192.168.200.11, name: instance_2_eu-de-01},
-          {ip: 192.168.200.12, name: instance_3_eu-de-01},
-          {ip: 192.168.200.13, name: instance_1_eu-de-02},
-          {ip: 192.168.200.14, name: instance_2_eu-de-02},
-          {ip: 192.168.200.15, name: instance_3_eu-de-02},
-          {ip: 192.168.200.16, name: instance_1_eu-de-03},
-          {ip: 192.168.200.17, name: instance_2_eu-de-03},
-          {ip: 192.168.200.18, name: instance_3_eu-de-03}]
-
 - name: Ping hosts, normal packets
   hosts: vpc_b_watcher
   vars:
@@ -57,7 +44,7 @@
     - name: Measure latency
       script: >
         ping.py --metric_name "{{ metric_name }}"
-        --hosts "{{ hostvars.localhost.nodes }}"
+        --hosts "{{ vpc_a_nodes }}"
       args:
         executable: "/usr/bin/python3"
       register: serialized_metrics
@@ -83,7 +70,7 @@
     - name: Measure latency
       script: >
         ping.py --metric_name "{{ metric_name }}"
-        --hosts "{{ hostvars.localhost.nodes }}"
+        --hosts "{{ vpc_a_nodes }}"
         --packet_size 1492
       args:
         executable: "/usr/bin/python3"

@@ -26,7 +26,7 @@
 
     - name: Register watchers ips
       set_fact:
-        watchers_eips: "{{ (wtcr.object.content | from_yaml).watchers_eips | replace('-','_') }}"
+        watchers_eips: "{{ (wtcr.object.content | from_yaml).vpc_b | replace('-','_') }}"
 
     - name: Register VPC_B watcher
       add_host:

@@ -13,7 +13,7 @@
 
     - name: Getting list of instances ips from inventory
       set_fact:
-        list_watchers: "{{ (watchers.object.content | from_yaml).watchers_eips }}"
+        list_watchers: "{{ (watchers.object.content | from_yaml).vpc_a }}"
 
     - name: Convert watchers dict to list for ping script
       set_fact:

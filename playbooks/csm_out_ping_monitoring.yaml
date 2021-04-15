@@ -4,47 +4,35 @@
   environment:
     OS_CLOUD: "{{ lookup('env', 'CSM_CLOUD') | default('csm', True) }}"
   tasks:
-    - name: Obtain key for connection
-      swift_client:
-        state: "{{ swift_operation }}"
-        container: "{{ swift_container }}"
-        object_name: machine_key
-      register: key
-
-    - name: Save key for connection
-      copy:
-        content: "{{ key.object.content }}"
-        dest: "{{ key_path }}/csm_key"
-        mode: 0600
-
-    - name: Get watchers
+    - name: Swift get object
       swift_client:
         state: "{{ swift_operation }}"
         container: "{{ swift_container }}"
         object_name: infra_eips
-      register: wtcr
+      register: watchers
 
-    - name: Register watchers ips
+    - name: Getting list of instances ips from inventory
       set_fact:
-        watchers_eips: "{{ (wtcr.object.content | from_yaml).vpc_b | replace('-','_') }}"
+        list_watchers: "{{ (watchers.object.content | from_yaml).vpc_a }}"
 
-    - name: Register VPC_B watcher
-      add_host:
-        name: vpc_b_watcher
-        groups: watchers
-        ansible_host: "{{ watchers_eips.watcher_eu_de_01_vpc_b }}"
-        ansible_ssh_user: linux
-        ansible_ssh_private_key_file: "{{ key_path }}/csm_key"
+    - name: Convert watchers dict to list for ping script
+      set_fact:
+        list_watchers: |
+            {% set res = [] -%}
+            {% for key, value in list_watchers.items() -%}
+                {% set ignored = res.extend([{'ip': value, 'name': key }]) -%}
+            {%- endfor %}
+            {{ res }}
 
 - name: Ping hosts, normal packets
-  hosts: vpc_b_watcher
+  hosts: localhost
   vars:
-    metric_name: csm_peering_ping.64
+    metric_name: csm_out_ping.64
   tasks:
     - name: Measure latency
       script: >
         ping.py --metric_name "{{ metric_name }}"
-        --hosts "{{ vpc_a_nodes }}"
+        --hosts "{{ list_watchers }}"
       args:
         executable: "/usr/bin/python3"
       register: serialized_metrics
@@ -58,19 +46,19 @@
   tasks:
     - name: Send metrics
       script: >
-        send_metrics.py "{{ hostvars.vpc_b_watcher.metrics }}"
+        send_metrics.py "{{ metrics }}"
       args:
         executable: "/usr/bin/python3"
 
 - name: Ping hosts, large packets 1500
-  hosts: vpc_b_watcher
+  hosts: localhost
   vars:
-    metric_name: csm_peering_ping.1500
+    metric_name: csm_out_ping.1500
   tasks:
     - name: Measure latency
       script: >
         ping.py --metric_name "{{ metric_name }}"
-        --hosts "{{ vpc_a_nodes }}"
+        --hosts "{{ list_watchers }}"
         --packet_size 1492
       args:
         executable: "/usr/bin/python3"
@@ -85,6 +73,6 @@
   tasks:
     - name: Send metrics
       script: >
-        send_metrics.py "{{ hostvars.vpc_b_watcher.large_metrics }}"
+        send_metrics.py "{{ large_metrics }}"
       args:
         executable: "/usr/bin/python3"

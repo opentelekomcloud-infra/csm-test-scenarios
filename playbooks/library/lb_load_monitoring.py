@@ -105,8 +105,7 @@ EXAMPLES = '''
   register: out
 '''
 
-SUCCESS_METRIC = 'csm_lb_timings'
-TIMEOUT_METRIC = 'csm_lb_timeout'
+LB_METRIC = 'csm_lb_timings'
 
 
 class LbLoadMonitoring(MessageModule):
@@ -135,17 +134,16 @@ class LbLoadMonitoring(MessageModule):
                 res = requests.get(
                     address, headers={'Connection': 'close'}, verify=verify, timeout=timeout
                 )
-            except requests.Timeout:
-                self.log('timeout sending request to LB')
+            except Exception:
+                self.log('Failed sending request to LB')
                 metrics.append(self.create_metric(
-                    name=f'{TIMEOUT_METRIC}.{interface}.{listener_type}',
-                    value=timeout * 1000,
-                    metric_type='ms',
-                    az='default')
+                    name=f'{LB_METRIC}.{interface}.{listener_type}.failed',
+                    metric_type='c',
+                    __type='metric')
                 )
             else:
                 metrics.append(self.create_metric(
-                    name=f'{SUCCESS_METRIC}.{interface}.{listener_type}',
+                    name=f'{LB_METRIC}.{interface}.{listener_type}',
                     value=int(res.elapsed.total_seconds() * 1000),
                     metric_type='ms',
                     az=re.search(r'eu-de-\d+', res.headers['Backend-Server']).group()

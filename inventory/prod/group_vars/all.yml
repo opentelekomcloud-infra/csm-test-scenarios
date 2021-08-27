@@ -8,7 +8,7 @@ swift_container: csm
 swift_object: lb_monitoring_inventory
 key_name: infra-key
 
-#vpc a nodes list
+# vpc a nodes list
 vpc_a_nodes: [
   {ip: 192.168.200.10, name: instance_1_eu-de-01},
   {ip: 192.168.200.11, name: instance_2_eu-de-01},

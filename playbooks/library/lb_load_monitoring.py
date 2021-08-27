@@ -134,7 +134,7 @@ class LbLoadMonitoring(MessageModule):
                 res = requests.get(
                     address, headers={'Connection': 'close'}, verify=verify, timeout=timeout
                 )
-            except Exception as Ex:
+            except Exception:
                 self.log('Failed sending request to LB')
                 metrics.append(self.create_metric(
                     name=f'{LB_METRIC}.{interface}.{listener_type}.failed',
